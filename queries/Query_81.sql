@@ -1,0 +1,1 @@
+select id, e_invoice_details, eway_bill_details, eway_bill_details_via_irn from voucher order by created_at desc;

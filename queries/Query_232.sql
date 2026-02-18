@@ -1,0 +1,1 @@
+drop table udm_area;

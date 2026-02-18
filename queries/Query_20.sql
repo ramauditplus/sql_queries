@@ -1,0 +1,1 @@
+select sum(amount) from bill_allocation where pending = '111b38c3-eba1-450e-a14c-99b93506ed87'

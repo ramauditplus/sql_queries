@@ -1,0 +1,1 @@
+select distinct gst_tax from inventory

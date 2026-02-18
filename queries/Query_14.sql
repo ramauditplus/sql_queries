@@ -1,0 +1,1 @@
+select * from purchase_bill where date = "2025-03-06";

@@ -1,0 +1,1 @@
+select * from organization where id = 'b3b273fb-79a4-4230-b383-62a55eb9d1f7'::text;

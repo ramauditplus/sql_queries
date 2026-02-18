@@ -1,0 +1,1 @@
+SELECT date, inventory_id, branch_id, SUM(outward) AS sale_qty FROM inv_txn WHERE base_voucher_type = 'SALE' AND date BETWEEN current_date - 365 AND current_date GROUP BY date, inventory_id, branch_id;

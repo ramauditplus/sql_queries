@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SqlDialectMappings">
+    <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/abc97662-0b51-4c90-968d-b9a33d478cae/console_39.sql" dialect="PostgreSQL" />
+    <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/abc97662-0b51-4c90-968d-b9a33d478cae/console_40.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/account_type_uuid_column_add.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/account_uuid_column_add.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/bank_uuid_column_add.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/data_migration.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/id_to_uuid.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_1.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_158.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_194.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_195.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_196.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_197.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_198.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_199.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_2.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_200.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_201.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_202.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_203.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_204.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_205.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_206.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_207.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_208.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_209.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_210.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_211.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_212.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_213.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_214.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_215.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_216.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_217.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_218.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_219.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_220.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_221.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_222.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_223.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_224.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_225.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_226.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_227.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_228.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_229.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_230.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_231.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_232.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_233.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_234.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_3.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/Query_4.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/aerp.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/queries/cond_switch.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/stationery_migration.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/velavan_migration.sql" dialect="PostgreSQL" />
+    <file url="PROJECT" dialect="PostgreSQL" />
+  </component>
+</project>

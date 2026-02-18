@@ -1,0 +1,1 @@
+SELECT * FROM "account_type" WHERE "id" = 2

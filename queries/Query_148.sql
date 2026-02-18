@@ -1,0 +1,1 @@
+select * from member_permission order by name asc;

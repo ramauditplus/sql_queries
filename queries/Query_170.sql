@@ -1,0 +1,1 @@
+select * from batch where expiry <= '2025-10-23';

@@ -1,0 +1,1 @@
+select * from inventory where apply_s_rate_from_master_for_sale is null;

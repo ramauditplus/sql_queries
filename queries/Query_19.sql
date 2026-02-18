@@ -1,0 +1,1 @@
+select * from bill_allocation where voucher_no = "";

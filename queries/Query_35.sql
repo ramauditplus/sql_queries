@@ -1,0 +1,1 @@
+alter table print_template alter template set not null;

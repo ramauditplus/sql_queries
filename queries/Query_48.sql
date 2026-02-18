@@ -1,0 +1,1 @@
+select * from inventory where id not in (Select inventory_id from batch);

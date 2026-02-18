@@ -1,0 +1,1 @@
+drop database aerp with(force);
