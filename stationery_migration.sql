@@ -565,6 +565,8 @@ alter table inventory
     drop column if exists incentive_applicable;
 alter table inventory
     drop column if exists incentive_range_id;
+alter table inventory
+    drop column if exists incentive_type;
 --##
 update inventory
 set
@@ -579,6 +581,10 @@ alter table inventory
 --##
 alter table inventory_branch_detail
     add if not exists s_disc_percentage float;
+--##
+alter table inventory_branch_detail alter column mrp_price_list type jsonb using mrp_price_list::jsonb;
+alter table inventory_branch_detail alter column s_rate_price_list type jsonb using mrp_price_list::jsonb;
+alter table inventory_branch_detail alter column nlc_price_list type jsonb using mrp_price_list::jsonb;
 --##
 update inventory_branch_detail x
 set s_disc_percentage = y.value
