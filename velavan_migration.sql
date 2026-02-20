@@ -2827,9 +2827,11 @@ ALTER TABLE udm_inventory_composition ADD COLUMN IF NOT EXISTS uuid_id uuid DEFA
         --
         alter table bank_txn drop column if exists ac_txn_id;
         alter table bank_txn rename column ac_txn_uuid to ac_txn_id;
+        alter table bank_txn alter column ac_txn_id set not null;
         --
         alter table bill_allocation drop column if exists ac_txn_id;
         alter table bill_allocation rename column ac_txn_uuid to ac_txn_id;
+        alter table bill_allocation alter column ac_txn_id set not null;
 
 -- ACCOUNT
     alter table account drop column if exists id;
@@ -2839,42 +2841,53 @@ ALTER TABLE udm_inventory_composition ADD COLUMN IF NOT EXISTS uuid_id uuid DEFA
         --
         alter table ac_txn drop column if exists account_id;
         alter table ac_txn rename column account_uuid to account_id;
+        alter table ac_txn alter column account_id set not null;
         --
         alter table ac_txn drop column if exists alt_account_id;
         alter table ac_txn rename column alt_account_uuid to alt_account_id;
         --
         alter table account_daily_summary drop column if exists account_id;
         alter table account_daily_summary rename column account_uuid to account_id;
+        alter table account_daily_summary alter column account_id set not null;
         --
         alter table bank_txn drop column if exists account_id;
         alter table bank_txn rename column account_uuid to account_id;
+        alter table bank_txn alter column account_id set not null;
         --
         alter table bank_txn drop column if exists alt_account_id;
         alter table bank_txn rename column alt_account_uuid to alt_account_id;
         --
         alter table branch drop column if exists account_id;
         alter table branch rename column account_uuid to account_id;
+        alter table branch alter column account_id set not null;
+        alter table branch add unique (account_id);
         --
         alter table bill_allocation drop column if exists account_id;
         alter table bill_allocation rename column account_uuid to account_id;
+        alter table bill_allocation alter column account_id set not null;
         --
         alter table batch drop column if exists vendor_id;
         alter table batch rename column vendor_uuid to vendor_id;
         --
         alter table inventory drop column if exists sale_account_id;
         alter table inventory rename column sale_account_uuid to sale_account_id;
+        alter table inventory alter column sale_account_id set not null;
         --
         alter table inventory drop column if exists purchase_account_id;
         alter table inventory rename column purchase_account_uuid to purchase_account_id;
+        alter table inventory alter column purchase_account_id set not null;
         --
         alter table tds_nature_of_payment drop column if exists tds_account_id;
         alter table tds_nature_of_payment rename column tds_account_uuid to tds_account_id;
+        alter table tds_nature_of_payment alter column tds_account_id set not null;
         --
         alter table tds_on_voucher drop column if exists party_account_id;
         alter table tds_on_voucher rename column party_account_uuid to party_account_id;
+        alter table tds_on_voucher alter column party_account_id set not null;
         --
         alter table tds_on_voucher drop column if exists tds_account_id;
         alter table tds_on_voucher rename column tds_account_uuid to tds_account_id;
+        alter table tds_on_voucher alter column tds_account_id set not null;
         --
         alter table inv_txn drop column if exists vendor_id;
         alter table inv_txn rename column vendor_uuid to vendor_id;
@@ -2896,21 +2909,27 @@ ALTER TABLE udm_inventory_composition ADD COLUMN IF NOT EXISTS uuid_id uuid DEFA
         --
         alter table gst_tax drop column if exists cgst_payable_account_id;
         alter table gst_tax rename column cgst_payable_account_uuid to cgst_payable_account_id;
+        alter table gst_tax alter column cgst_payable_account_id set not null;
         --
         alter table gst_tax drop column if exists sgst_payable_account_id;
         alter table gst_tax rename column sgst_payable_account_uuid to sgst_payable_account_id;
+        alter table gst_tax alter column sgst_payable_account_id set not null;
         --
         alter table gst_tax drop column if exists igst_payable_account_id;
         alter table gst_tax rename column igst_payable_account_uuid to igst_payable_account_id;
+        alter table gst_tax alter column igst_payable_account_id set not null;
         --
         alter table gst_tax drop column if exists cgst_receivable_account_id;
         alter table gst_tax rename column cgst_receivable_account_uuid to cgst_receivable_account_id;
+        alter table gst_tax alter column cgst_receivable_account_id set not null;
         --
         alter table gst_tax drop column if exists sgst_receivable_account_id;
         alter table gst_tax rename column sgst_receivable_account_uuid to sgst_receivable_account_id;
+        alter table gst_tax alter column sgst_receivable_account_id set not null;
         --
         alter table gst_tax drop column if exists igst_receivable_account_id;
         alter table gst_tax rename column igst_receivable_account_uuid to igst_receivable_account_id;
+        alter table gst_tax alter column igst_receivable_account_id set not null;
         --
         alter table udm_vendor_bill_map drop column if exists vendor_id;
         alter table udm_vendor_bill_map rename column vendor_uuid to vendor_id;
@@ -2932,12 +2951,15 @@ ALTER TABLE udm_inventory_composition ADD COLUMN IF NOT EXISTS uuid_id uuid DEFA
         --
         alter table ac_txn drop column if exists account_type_id;
         alter table ac_txn rename column account_type_uuid to account_type_id;
+        alter table ac_txn alter column account_type_id set not null;
         --
         alter table account drop column if exists account_type_id;
         alter table account rename column account_type_uuid to account_type_id;
+        alter table account alter column account_type_id set not null;
         --
         alter table bill_allocation drop column if exists account_type_id;
         alter table bill_allocation rename column account_type_uuid to account_type_id;
+        alter table bill_allocation alter column account_type_id set not null;
 
 -- BANK
     alter table bank drop column if exists id;
@@ -2950,6 +2972,7 @@ ALTER TABLE udm_inventory_composition ADD COLUMN IF NOT EXISTS uuid_id uuid DEFA
         --
         alter table bank_beneficiary drop column if exists bank_id;
         alter table bank_beneficiary rename column bank_uuid to bank_id;
+        alter table bank_beneficiary alter column bank_id set not null;
 
 -- BANK_BENEFICIARY
     alter table bank_beneficiary drop column if exists id;
@@ -2968,33 +2991,43 @@ ALTER TABLE udm_inventory_composition ADD COLUMN IF NOT EXISTS uuid_id uuid DEFA
         --
         alter table ac_txn drop column if exists branch_id;
         alter table ac_txn rename column branch_uuid to branch_id;
+        alter table ac_txn alter column branch_id set not null;
         --
         alter table account_daily_summary drop column if exists branch_id;
         alter table account_daily_summary rename column branch_uuid to branch_id;
+        alter table account_daily_summary alter column branch_id set not null;
+        ALTER TABLE account_daily_summary ADD CONSTRAINT account_daily_summary_pkey PRIMARY KEY (account_id, branch_id, date);
         --
         alter table bank_txn drop column if exists branch_id;
         alter table bank_txn rename column branch_uuid to branch_id;
+        alter table bank_txn alter column branch_id set not null;
         --
         alter table batch drop column if exists branch_id;
         alter table batch rename column branch_uuid to branch_id;
+        alter table batch alter column branch_id set not null;
         --
         alter table bill_allocation drop column if exists branch_id;
         alter table bill_allocation rename column branch_uuid to branch_id;
+        alter table bill_allocation alter column branch_id set not null;
         --
         alter table inv_txn drop column if exists branch_id;
         alter table inv_txn rename column branch_uuid to branch_id;
+        alter table inv_txn alter column branch_id set not null;
         --
         alter table inventory_branch_detail drop column if exists branch_id;
         alter table inventory_branch_detail rename column branch_uuid to branch_id;
+        alter table inventory_branch_detail alter column branch_id set not null;
         --
         alter table tds_on_voucher drop column if exists branch_id;
         alter table tds_on_voucher rename column branch_uuid to branch_id;
+        alter table tds_on_voucher alter column branch_id set not null;
         --
         alter table voucher_numbering drop column if exists branch_id;
         alter table voucher_numbering rename column branch_uuid to branch_id;
         --
         alter table voucher drop column if exists branch_id;
         alter table voucher rename column branch_uuid to branch_id;
+        alter table voucher alter column branch_id set not null;
         --
         alter table voucher drop column if exists udf_alt_branch_id;
         alter table voucher rename column udf_alt_branch_uuid to udf_alt_branch_id;
@@ -3016,18 +3049,24 @@ ALTER TABLE udm_inventory_composition ADD COLUMN IF NOT EXISTS uuid_id uuid DEFA
         --
         alter table batch drop column if exists inventory_id;
         alter table batch rename column inventory_uuid to inventory_id;
+        alter table batch alter column inventory_id set not null;
         --
         alter table bill_of_material drop column if exists inventory_id;
         alter table bill_of_material rename column inventory_uuid to inventory_id;
+        alter table bill_of_material alter column inventory_id set not null;
         --
         alter table inv_txn drop column if exists inventory_id;
         alter table inv_txn rename column inventory_uuid to inventory_id;
+        alter table inv_txn alter column inventory_id set not null;
         --
         alter table inventory_branch_detail drop column if exists inventory_id;
         alter table inventory_branch_detail rename column inventory_uuid to inventory_id;
+        alter table inventory_branch_detail alter column inventory_id set not null;
+        alter table inventory_branch_detail add constraint inventory_branch_detail_pkey primary key (branch_id, inventory_id);
         --
         alter table udm_vendor_item_map drop column if exists inventory_id;
         alter table udm_vendor_item_map rename column inventory_uuid to inventory_id;
+        alter table udm_vendor_item_map alter column inventory_id set not null;
 
 -- MANUFACTURER
     alter table manufacturer drop column if exists id;
@@ -3076,6 +3115,7 @@ ALTER TABLE udm_inventory_composition ADD COLUMN IF NOT EXISTS uuid_id uuid DEFA
         --
         alter table tds_on_voucher drop column if exists tds_nature_of_payment_id;
         alter table tds_on_voucher rename column tds_nature_of_payment_uuid to tds_nature_of_payment_id;
+        alter table tds_on_voucher alter column tds_nature_of_payment_id set not null;
 
 -- UNIT
     alter table unit drop column if exists id;
@@ -3085,12 +3125,15 @@ ALTER TABLE udm_inventory_composition ADD COLUMN IF NOT EXISTS uuid_id uuid DEFA
         --
         alter table batch drop column if exists unit_id;
         alter table batch rename column unit_uuid to unit_id;
+        alter table batch alter column unit_id set not null;
         --
         alter table inv_txn drop column if exists unit_id;
         alter table inv_txn rename column unit_uuid to unit_id;
+        alter table inv_txn alter column unit_id set not null;
         --
         alter table inventory drop column if exists unit_id;
         alter table inventory rename column unit_uuid to unit_id;
+        alter table inventory alter column unit_id set not null;
         --
         alter table inventory drop column if exists sale_unit_id;
         alter table inventory rename column sale_unit_uuid to sale_unit_id;
@@ -3112,6 +3155,7 @@ ALTER TABLE udm_inventory_composition ADD COLUMN IF NOT EXISTS uuid_id uuid DEFA
         --
         alter table bank_txn drop column if exists voucher_id;
         alter table bank_txn rename column voucher_uuid to voucher_id;
+        alter table bank_txn alter column voucher_id set not null;
         --
         alter table batch drop column if exists voucher_id;
         alter table batch rename column voucher_uuid to voucher_id;
@@ -3124,6 +3168,7 @@ ALTER TABLE udm_inventory_composition ADD COLUMN IF NOT EXISTS uuid_id uuid DEFA
         --
         alter table tds_on_voucher drop column if exists voucher_id;
         alter table tds_on_voucher rename column voucher_uuid to voucher_id;
+        alter table tds_on_voucher alter column voucher_id set not null;
 
 -- VOUCHER_TYPE
     alter table voucher_type drop column if exists id;
@@ -3144,6 +3189,7 @@ ALTER TABLE udm_inventory_composition ADD COLUMN IF NOT EXISTS uuid_id uuid DEFA
          --
         alter table voucher drop column if exists voucher_type_id;
         alter table voucher rename column voucher_type_uuid to voucher_type_id;
+        alter table voucher alter column voucher_type_id set not null;
 
 -- WAREHOUSE
     alter table warehouse drop column if exists id;
@@ -3153,9 +3199,11 @@ ALTER TABLE udm_inventory_composition ADD COLUMN IF NOT EXISTS uuid_id uuid DEFA
         --
         alter table batch drop column if exists warehouse_id;
         alter table batch rename column warehouse_uuid to warehouse_id;
+        alter table batch alter column warehouse_id set not null;
         --
         alter table inv_txn drop column if exists warehouse_id;
         alter table inv_txn rename column warehouse_uuid to warehouse_id;
+        alter table inv_txn alter column warehouse_id set not null;
         --
         alter table voucher drop column if exists warehouse_id;
         alter table voucher rename column warehouse_uuid to warehouse_id;
@@ -3171,6 +3219,7 @@ ALTER TABLE udm_inventory_composition ADD COLUMN IF NOT EXISTS uuid_id uuid DEFA
         --
         alter table branch drop column if exists members;
         alter table branch rename column members_uuid to members;
+        alter table branch alter column members set not null;
 
 -- FINANCIAL_YEAR
     alter table financial_year drop column if exists id;
@@ -3193,6 +3242,7 @@ ALTER TABLE udm_inventory_composition ADD COLUMN IF NOT EXISTS uuid_id uuid DEFA
     alter table batch rename column uuid_id to id;
     alter table batch alter column id set not null;
     ALTER TABLE batch ADD CONSTRAINT batch_pkey PRIMARY KEY (id);
+    alter table batch add unique (inventory_id, branch_id, warehouse_id, batch_no, vendor_id);
 
 -- PRINT_TEMPLATE
     alter table print_template drop column if exists id;
