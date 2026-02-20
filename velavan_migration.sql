@@ -1,3 +1,41 @@
+-- REMOVE RECORDS RELATED TO UNWANTED TABLE
+
+with a as (select voucher_id from sales_emi_reconciliation_voucher),
+     b as ( delete from ac_txn using a where ac_txn.voucher_id = a.voucher_id),
+     c as ( delete from bill_allocation using a where bill_allocation.voucher_id = a.voucher_id),
+     d as ( delete from bank_txn using a where bank_txn.voucher_id = a.voucher_id),
+     e as ( delete from inv_txn using a where inv_txn.voucher_id = a.voucher_id)
+delete
+from voucher using a
+where voucher.id = a.voucher_id;
+
+with a as (select voucher_id from customer_advance),
+     b as ( delete from ac_txn using a where ac_txn.voucher_id = a.voucher_id),
+     c as ( delete from bill_allocation using a where bill_allocation.voucher_id = a.voucher_id),
+     d as ( delete from bank_txn using a where bank_txn.voucher_id = a.voucher_id),
+     e as ( delete from inv_txn using a where inv_txn.voucher_id = a.voucher_id)
+delete
+from voucher using a
+where voucher.id = a.voucher_id;
+
+with a as (select voucher_id from gift_voucher),
+     b as ( delete from ac_txn using a where ac_txn.voucher_id = a.voucher_id),
+     c as ( delete from bill_allocation using a where bill_allocation.voucher_id = a.voucher_id),
+     d as ( delete from bank_txn using a where bank_txn.voucher_id = a.voucher_id),
+     e as ( delete from inv_txn using a where inv_txn.voucher_id = a.voucher_id)
+delete
+from voucher using a
+where voucher.id = a.voucher_id;
+
+with a as (select voucher_id from shipment),
+     b as ( delete from ac_txn using a where ac_txn.voucher_id = a.voucher_id),
+     c as ( delete from bill_allocation using a where bill_allocation.voucher_id = a.voucher_id),
+     d as ( delete from bank_txn using a where bank_txn.voucher_id = a.voucher_id),
+     e as ( delete from inv_txn using a where inv_txn.voucher_id = a.voucher_id)
+delete
+from voucher using a
+where voucher.id = a.voucher_id;
+
 --REMOVE FOREIGN KEY--
 
 DO $$
@@ -357,12 +395,6 @@ alter table voucher
     add if not exists udf_transfer_voucher_id      int,
     add if not exists udf_approved                 bool,
     add if not exists udf_doctor_id                int;
---##
-update voucher v
-set customer_id   = b.customer_id,
-    customer_name = b.customer_name
-from customer_advance b
-where v.id = b.voucher_id;
 --##
 update voucher v
 set branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
