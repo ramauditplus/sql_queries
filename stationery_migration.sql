@@ -612,6 +612,8 @@ set
     ui_perms = coalesce(to_jsonb(mr.perms), '[]'::jsonb)
 from member_role mr
 where mr.name = m.role_id;
+--##
+alter table member alter column settings type jsonb using settings::jsonb;
 -- MEMBER --
 
 -- ORGANIZATION --
@@ -1041,6 +1043,7 @@ WHERE m.id = 1;
     drop table if exists stock_journal_inv_item;
     drop table if exists stock_value;
     drop table if exists stock_value_opening;
+    drop table if exists sales_emi_reconciliation_voucher;
     drop table if exists tag;
     drop table if exists tally_account_map;
     drop table if exists vault;
@@ -1072,6 +1075,8 @@ alter table print_layout
 --##
 alter table print_layout
     rename column type to mode;
+--##
+alter table print_layout alter column sample_data type jsonb using sample_data::jsonb;
 -- PRINT_LAYOUT --
 
 -- PRINT_TEMPLATE --
@@ -3188,6 +3193,7 @@ ALTER TABLE print_template ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7(
     alter table voucher rename column session to id;
     alter table voucher alter column id set not null;
     ALTER TABLE voucher ADD CONSTRAINT voucher_pkey PRIMARY KEY (id);
+    alter table voucher drop constraint voucher_session_key;
     --
     alter table voucher drop column if exists udf_transfer_voucher_id;
     alter table voucher rename column udf_transfer_voucher_uuid to udf_transfer_voucher_id;
