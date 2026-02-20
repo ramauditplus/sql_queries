@@ -836,6 +836,7 @@ WHERE m.id = 1;
         alter table bill_allocation drop if exists due_date;
         alter table bill_allocation drop if exists account_type_name;
         alter table bill_allocation drop if exists bill_date;
+        alter table bill_allocation alter column metadata type jsonb using metadata::jsonb;
     -- ====== columns ======
 --##
 -- BILL_ALLOCATION --
@@ -3021,6 +3022,8 @@ ALTER TABLE print_template ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7(
     alter table branch rename column uuid_id to id;
     alter table branch alter column id set not null;
     ALTER TABLE branch ADD CONSTRAINT branch_pkey PRIMARY KEY (id);
+    alter table branch alter column misc type jsonb using misc::jsonb;
+    alter table branch alter column configuration type jsonb using configuration::jsonb;
         --
         alter table ac_txn drop column if exists branch_id;
         alter table ac_txn rename column branch_uuid to branch_id;
