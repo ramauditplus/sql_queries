@@ -753,6 +753,7 @@ WHERE m.id = 1;
         alter table account ADD column code int;
         update account SET code = id;
         alter table account alter column code SET NOT NULL;
+        alter table account alter column e_banking_info type jsonb using e_banking_info::jsonb;
     -- ====== columns ======
 --##
 -- ACCOUNT --
@@ -2004,6 +2005,7 @@ $$;
 alter table inv_txn drop if exists batch_id;
 alter table inv_txn drop if exists dummy;
 alter table inv_txn alter column batch_no set not null;
+alter table batch drop if exists id;
 --##
     ALTER TABLE inventory_branch_detail ADD COLUMN IF NOT EXISTS branch_uuid uuid;
         UPDATE inventory_branch_detail b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
@@ -2776,7 +2778,6 @@ ALTER TABLE financial_year ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7(
     ALTER TABLE voucher_numbering ADD COLUMN IF NOT EXISTS f_year_uuid uuid;
         UPDATE voucher_numbering SET f_year_uuid = uuid_id FROM financial_year WHERE financial_year.id = voucher_numbering.f_year_id;
 ALTER TABLE bill_of_material ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
-ALTER TABLE batch ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
 ALTER TABLE print_template ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
 
 -------------------------------------------------------------------------------------------------
@@ -3270,10 +3271,6 @@ ALTER TABLE udm_inventory_composition ADD COLUMN IF NOT EXISTS uuid_id uuid DEFA
     ALTER TABLE bill_of_material ADD CONSTRAINT bill_of_material_pkey PRIMARY KEY (id);
 
 -- BATCH
-    alter table batch drop column if exists id;
-    alter table batch rename column uuid_id to id;
-    alter table batch alter column id set not null;
-    ALTER TABLE batch ADD CONSTRAINT batch_pkey PRIMARY KEY (id);
     alter table batch add unique (inventory_id, branch_id, warehouse_id, batch_no, vendor_id);
 
 -- PRINT_TEMPLATE
