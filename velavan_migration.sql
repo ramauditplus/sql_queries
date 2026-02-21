@@ -693,7 +693,7 @@ WHERE m.id = 1;
     alter table inv_txn drop if exists manufacturer_name;
     alter table inv_txn drop if exists is_opening;
     alter table inv_txn drop if exists inventory_voucher_id;
-    alter table inv_txn drop if exists category1_id;
+    alter table inv_txn rename column category1_id to section_id;
     alter table inv_txn drop if exists category1_name;
     alter table inv_txn drop if exists category2_id;
     alter table inv_txn drop if exists category2_name;
@@ -2278,6 +2278,8 @@ ALTER TABLE section ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
         UPDATE inventory b SET section_uuid = a.uuid_id FROM section a WHERE a.id = b.section_id;
     ALTER TABLE batch ADD COLUMN IF NOT EXISTS section_uuid uuid;
         UPDATE batch b SET section_uuid = a.uuid_id FROM section a WHERE a.id = b.section_id;
+    ALTER TABLE inv_txn ADD COLUMN IF NOT EXISTS section_uuid uuid;
+        UPDATE inv_txn b SET section_uuid = a.uuid_id FROM section a WHERE a.id = b.section_id;
 
 -------------------------------------------------------------------------------------------------
 
@@ -3155,7 +3157,10 @@ ALTER TABLE udm_inventory_composition ADD COLUMN IF NOT EXISTS uuid_id uuid DEFA
         --
         alter table batch drop column if exists section_id;
         alter table batch rename column section_uuid to section_id;        
-        
+        --
+        alter table inv_txn drop column if exists section_id;
+        alter table inv_txn rename column section_uuid to section_id;
+
 -- TDS_NATURE_OF_PAYMENT
     alter table tds_nature_of_payment drop column if exists id;
     alter table tds_nature_of_payment rename column uuid_id to id;
