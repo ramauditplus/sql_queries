@@ -2025,7 +2025,6 @@ $$;
 alter table inv_txn drop if exists batch_id;
 alter table inv_txn drop if exists dummy;
 alter table inv_txn alter column batch_no set not null;
-alter table batch drop if exists id;
 --##
     ALTER TABLE inventory_branch_detail ADD COLUMN IF NOT EXISTS branch_uuid uuid;
         UPDATE inventory_branch_detail b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
@@ -2644,6 +2643,7 @@ $$
         END LOOP;
     END
 $$;
+alter table batch drop if exists id;
     ALTER TABLE inv_txn ADD COLUMN IF NOT EXISTS warehouse_uuid uuid;
 --         UPDATE inv_txn b SET warehouse_uuid = a.uuid_id FROM warehouse a WHERE a.id = b.warehouse_id;
 DO
