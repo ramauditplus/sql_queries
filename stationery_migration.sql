@@ -3041,6 +3041,7 @@ ALTER TABLE print_template ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7(
         alter table account rename column bank_beneficiary_uuid to bank_beneficiary_id;
 
 -- BRANCH
+    alter table branch alter column members drop not null;
     alter table branch drop column if exists id;
     alter table branch rename column uuid_id to id;
     alter table branch alter column id set not null;
