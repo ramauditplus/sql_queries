@@ -843,6 +843,32 @@ WHERE m.id = 1;
 --##
 -- BATCH --
 
+-- BILL ALLOCATION IMP --
+alter table bill_allocation
+    add if not exists new_ref_no text;
+--##
+create index bill_allocation_pending
+    on bill_allocation (pending);
+--##
+with a as (select coalesce(nullif(upper(regexp_replace(ref_no, '\s+', '', 'g')), ''), voucher_no, '1') as no,
+                  array_agg(pending)                                                                   as pids
+           from bill_allocation
+           where ref_type = 'NEW'
+           group by account_id, branch_id,
+                    coalesce(nullif(upper(regexp_replace(ref_no, '\s+', '', 'g')), ''), voucher_no, '1'))
+update bill_allocation b
+set new_ref_no = a.no
+from a
+where b.pending = any (a.pids);
+--##
+alter table bill_allocation
+    rename ref_no to old_ref_no;
+--##
+alter table bill_allocation
+    rename new_ref_no to ref_no;
+--##
+-- BILL ALLOCATION IMP --
+
 -- BILL_ALLOCATION --
 --##
     -- ====== columns ======
