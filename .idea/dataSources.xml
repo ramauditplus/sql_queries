@@ -34,7 +34,6 @@
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
       <jdbc-url>jdbc:postgresql://localhost:5432/postgres</jdbc-url>
-      <vm-options>-Xmx2048m</vm-options>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
     <data-source source="LOCAL" name="31@54322" uuid="6b06aa4f-9523-4c24-bb78-90975684cc72">

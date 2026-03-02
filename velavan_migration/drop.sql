@@ -266,7 +266,6 @@
     drop table if exists price_list_condition;
     drop table if exists price_list;
     drop table if exists wanted_note;
-    drop table if exists permission;
     drop table if exists shipment;
     drop table if exists stock_journal;
     drop table if exists stock_journal_inv_item;
@@ -801,3 +800,6 @@
     create index on voucher (voucher_no);
     create index on voucher (branch_id);
     create index on voucher (base_voucher_type);
+
+--## last query
+delete from unit_conversion where conversion = 1;

@@ -746,10 +746,6 @@ alter table print_template
     rename column type to mode;
 -- PRINT_TEMPLATE --
 
--- UNIT
-alter table unit alter column precision type int using precision::int;
--- UNIT
-
 -- MODIFY TABLE
 alter table vendor_bill_map rename to udm_vendor_bill_map;
 alter table vendor_item_map rename to udm_vendor_item_map;
@@ -872,16 +868,54 @@ FROM category_option;
 SELECT setval('section_id_seq', (select max(id) from section));
 -- SECTION --
 
+--## UNIT --
+drop table if exists unit;
+--##
+create table unit
+(
+    id         uuid      not null primary key,
+    name       text      not null,
+    uqc        text      not null,
+    symbol     text      not null,
+    precision  integer   not null,
+    created_by uuid      not null,
+    updated_by uuid      not null,
+    created_at timestamp not null,
+    updated_at timestamp not null
+);
+--##
+with a as (select distinct retail_qty
+           from batch
+           order by retail_qty)
+insert
+into unit
+select uuidv7(),
+       a.retail_qty::text || 'S',
+       'OTH',
+       a.retail_qty::text,
+       1,
+       '01941f29-7c00-7000-8000-000000000000',
+       '01941f29-7c00-7000-8000-000000000000',
+       now(),
+       now()
+from a;
+--## UNIT --
+
 -- UNIT_CONVERSION --
 --##
-create table if not exists unit_conversion
+drop table if exists unit_conversion;
+--##
+create table unit_conversion
 (
-    primary_unit_id    uuid       not null,
-    conversion_unit_id uuid       not null,
-    conversion         float     not null,
+    primary_unit_id    uuid  not null,
+    conversion_unit_id uuid  not null,
+    conversion         float not null,
     primary key (primary_unit_id, conversion)
 );
 --##
+insert into unit_conversion
+select (select u.id from unit u where symbol = '1'), id, symbol::float
+from unit;
 -- UNIT_CONVERSION --
 
 -- UQC --
@@ -895,6 +929,8 @@ create table if not exists uqc
 -- UQC --
 
 --## permissions
+drop table if exists permission;
+--
 create table if not exists permission
 (
     name       text primary key,
