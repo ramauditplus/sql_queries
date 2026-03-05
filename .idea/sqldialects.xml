@@ -8,7 +8,9 @@
     <file url="file://$PROJECT_DIR$/bank_uuid_column_add.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/data_migration.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/id_to_uuid.sql" dialect="PostgreSQL" />
-    <file url="file://$PROJECT_DIR$/medical_final.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/migration/initial.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/migration/medical_full.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/migration/stationery_full.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/queries/Query.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/queries/Query_1.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/queries/Query_158.sql" dialect="PostgreSQL" />
