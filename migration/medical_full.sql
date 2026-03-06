@@ -2229,7 +2229,6 @@ alter table inv_txn
     alter column inward set not null,
     alter column outward set not null;
 -- inv_txn uuid related changes
-ALTER TABLE inv_txn ADD COLUMN IF NOT EXISTS vendor_uuid uuid;
 ALTER TABLE inv_txn ADD COLUMN IF NOT EXISTS branch_uuid uuid;
 ALTER TABLE inv_txn ADD COLUMN IF NOT EXISTS inventory_uuid uuid;
 ALTER TABLE inv_txn ADD COLUMN IF NOT EXISTS voucher_uuid uuid;
@@ -2718,7 +2717,6 @@ delete from unit_conversion where conversion = 1;
     alter table inventory_branch_detail drop column if exists val_name;
     alter table inventory_branch_detail drop column if exists division_id;
 -- MEMBER --
-    alter table member drop column if exists remote_access;
     alter table member drop column if exists user_id;
     alter table member drop column if exists role_id;
 -- VOUCHER_TYPE --
