@@ -173,6 +173,23 @@ alter table organization
 --## f_key
 --## MODIFY_TABLE
 
+--## DEVICE
+drop table if exists device;
+--##
+create table if not exists device
+(
+    id         uuid      not null primary key,
+    name       text      not null,
+    branch_id  uuid      not null,
+    session_id uuid,
+    expired_at timestamp,
+    created_by uuid      not null,
+    updated_by uuid      not null,
+    created_at timestamp not null,
+    updated_at timestamp not null
+);
+--## DEVICE
+
 --## PERMISSION
 drop table if exists permission;
 --##
@@ -2751,7 +2768,6 @@ delete from unit_conversion where conversion = 1;
     drop table if exists delivery_note;
     drop table if exists delivery_note_inv_item;
     drop table if exists delivery_receipt;
-    drop table if exists device;
     drop table if exists display_rack;
     drop table if exists division;
     drop table if exists e_banking_log;
