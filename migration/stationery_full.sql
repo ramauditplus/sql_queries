@@ -827,8 +827,18 @@ ALTER TABLE branch ADD COLUMN IF NOT EXISTS gst_registration_uuid uuid;
 ------------------
     UPDATE branch b SET account_uuid = a.uuid_id FROM account a WHERE a.id = b.account_id;
     UPDATE branch b SET gst_registration_uuid = a.uuid_id FROM gst_registration a WHERE a.id = b.gst_registration_id;
-select now() as time, 'UUID_CHANGES FOR ACCOUNT ENDS' as msg;
+select now() as time, 'UUID_CHANGES FOR BRANCH ENDS' as msg;
 --## BRANCH
+---------------------------------------------------------------------------
+
+---------------------------------------------------------------------------
+--## POS_COUNTER
+select now() as time, 'UUID_CHANGES FOR POS_COUNTER STARTS' as msg;
+ALTER TABLE pos_counter ADD COLUMN IF NOT EXISTS branch_uuid uuid;
+------------------
+    UPDATE pos_counter b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
+select now() as time, 'UUID_CHANGES FOR POS_COUNTER ENDS' as msg;
+--## POS_COUNTER
 ---------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------
@@ -2738,6 +2748,7 @@ delete from unit_conversion where conversion = 1;
     alter table unit                    drop if exists changed_at;
     alter table voucher_type            drop if exists changed_at;
     alter table warehouse               drop if exists changed_at;
+    alter table pos_counter             drop if exists changed_at;
 --     alter table udm_doctor                  drop if exists changed_at;
 --     alter table udm_drug_classification     drop if exists changed_at;
 --DROP OR MODIFY TABLE--
@@ -2791,7 +2802,6 @@ delete from unit_conversion where conversion = 1;
     drop table if exists personal_use_purchase;
     drop table if exists pos_offline_voucher;
     drop table if exists pos_counter_session;
-    drop table if exists pos_counter;
     drop table if exists pos_counter_settlement;
     drop table if exists pos_server;
     drop table if exists power_bi;
@@ -2973,6 +2983,10 @@ delete from unit_conversion where conversion = 1;
         alter table voucher drop column if exists branch_id;
         alter table voucher rename column branch_uuid to branch_id;
         alter table voucher alter column branch_id set not null;
+        --
+        alter table pos_counter drop column if exists branch_id;
+        alter table pos_counter rename column branch_uuid to branch_id;
+        alter table pos_counter alter column branch_id set not null;
 -- GST_REGISTRATION
     alter table gst_registration drop column if exists id;
     alter table gst_registration rename column uuid_id to id;
