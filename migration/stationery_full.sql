@@ -649,16 +649,16 @@ ALTER TABLE voucher_type ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
     UPDATE voucher_type SET uuid_id = '01957833-9000-7043-8000-000000000000' WHERE id = 8;
     UPDATE voucher_type SET uuid_id = '01957d59-ec00-7044-8000-000000000000' WHERE id = 9;
     UPDATE voucher_type SET uuid_id = '01958280-4800-7045-8000-000000000000' WHERE id = 10;
-    UPDATE voucher_type SET name = 'Stock Journal', base_type = 'STOCK_JOURNAL' WHERE id = 10;
     UPDATE voucher_type SET uuid_id = '019587a6-a400-7046-8000-000000000000' WHERE id = 17;
     UPDATE voucher_type SET uuid_id = '01958ccd-0000-7047-8000-000000000000' WHERE id = 21;
     UPDATE voucher_type SET uuid_id = '019591f3-5c00-7048-8000-000000000000' WHERE id = 23;
+    alter table voucher_type alter column config type jsonb using config::jsonb;
     UPDATE voucher_type
     SET config = (SELECT jsonb_object_agg(
                                  key,
                                  value_cleaned
                          )
-                  FROM jsonb_each(config::jsonb) t(key, value)
+                  FROM jsonb_each(config) t(key, value)
                            CROSS JOIN LATERAL (
                       SELECT jsonb_strip_nulls(
                                      value
@@ -674,7 +674,9 @@ ALTER TABLE voucher_type ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
                                          - 'cheque_print_template'
                                          - 'approvers'
                              )
-                      ) AS cleaned(value_cleaned))::json;
+                      ) AS cleaned(value_cleaned));
+    UPDATE voucher_type SET config = config -> lower(base_type) WHERE config ? lower(base_type);
+    UPDATE voucher_type SET name = 'Stock Journal', base_type = 'STOCK_JOURNAL' WHERE id = 10;
 ALTER TABLE voucher_type ADD COLUMN IF NOT EXISTS sequence_uuid uuid;
         UPDATE voucher_type b SET sequence_uuid = a.uuid_id FROM voucher_type a WHERE a.id = b.sequence_id;
 
@@ -1111,17 +1113,17 @@ select now() as time, 'UUID_CHANGES FOR VOUCHER_NUMBERING ENDS' as msg;
 
 -- GSTR_2B --
 --##
-alter table gstr_2b drop column IF EXISTS id;
-alter table gstr_2b rename column gst_no to ctin;
-alter table gstr_2b rename column supplier_name to trdnm;
-alter table gstr_2b rename column invoice_no to inum;
-alter table gstr_2b rename column invoice_date to dt;
-alter table gstr_2b rename column total_invoice_value to val;
-alter table gstr_2b rename column total_taxable_amount to txval;
-alter table gstr_2b rename column integrated_tax_amount to igst;
-alter table gstr_2b rename column central_tax_amount to cgst;
-alter table gstr_2b rename column state_tax_amount to sgst;
-alter table gstr_2b rename column cess_amount to cess;
+alter table if exists gstr_2b drop column IF EXISTS id;
+alter table if exists gstr_2b rename column gst_no to ctin;
+alter table if exists gstr_2b rename column supplier_name to trdnm;
+alter table if exists gstr_2b rename column invoice_no to inum;
+alter table if exists gstr_2b rename column invoice_date to dt;
+alter table if exists gstr_2b rename column total_invoice_value to val;
+alter table if exists gstr_2b rename column total_taxable_amount to txval;
+alter table if exists gstr_2b rename column integrated_tax_amount to igst;
+alter table if exists gstr_2b rename column central_tax_amount to cgst;
+alter table if exists gstr_2b rename column state_tax_amount to sgst;
+alter table if exists gstr_2b rename column cess_amount to cess;
 -- GSTR_2B --
 
 -- MEMBER --
@@ -1308,7 +1310,9 @@ $$
     BEGIN
         LOOP
             UPDATE batch i
-            SET inventory_uuid = a.uuid_id
+            SET inventory_uuid  = a.uuid_id,
+                section_id      = a.section_id,
+                manufacturer_id = a.manufacturer_id
             FROM inventory a
             WHERE a.id = i.inventory_id
               AND i.inventory_uuid IS NULL
@@ -1336,24 +1340,6 @@ update batch b
 --##
 update batch b
     set unit_conv = case when b.is_retail_qty then 1 else b.retail_qty end;
---##
---     UPDATE batch b
--- SET
---     unit_uuid = CASE
---                     WHEN b.is_retail_qty
---                         THEN a.primary_unit_id
---                     ELSE a.conversion_unit_id
---                 END,
---     unit_conv = CASE
---                     WHEN b.is_retail_qty
---                         THEN 1
---                     ELSE inv.retail_qty
---                 END,
---     section_id = inv.section_id,
---     manufacturer_id = inv.manufacturer_id
--- FROM inventory inv
--- LEFT JOIN unit_conversion a
---       ON a.primary_unit_id = inv.unit_uuid;
 ------------------
 alter table batch alter column unit_conv set not null;
 ------------------
@@ -1432,228 +1418,205 @@ alter table voucher
     add if not exists party_gst_location_id        text,
     add if not exists party_gst_no                 text,
     add if not exists gst_location_type            text,
-    add if not exists vendor_id                    int,
+    add if not exists vendor_id                    uuid,
     add if not exists vendor_name                  text,
-    add if not exists customer_id                  int,
+    add if not exists customer_id                  uuid,
     add if not exists customer_name                text,
-    add if not exists warehouse_id                 int,
+    add if not exists warehouse_id                 uuid,
     add if not exists warehouse_name               text,
     add if not exists rounded_off                  float,
     add if not exists disc_mode                    text,
     add if not exists discount                     float,
-    add if not exists sales_person_id              int,
+    add if not exists sales_person_id              uuid,
     add if not exists sale_value                   float,
     add if not exists profit_value                 float,
     add if not exists nlc_value                    float,
     add if not exists valid_provisional_profit     bool,
-    add if not exists udf_alt_branch_id            int,
-    add if not exists udf_alt_warehouse_id         int,
-    add if not exists udf_transfer_voucher_id      int,
-    add if not exists udf_approved                 bool;
-    -- add if not exists udf_doctor_id                int;
+    add if not exists udf_alt_branch_id            uuid,
+    add if not exists udf_alt_warehouse_id         uuid,
+    add if not exists udf_transfer_voucher_id      uuid,
+    add if not exists udf_approved                 bool,
+    add if not exists branch_uuid                  uuid,
+    add if not exists voucher_type_uuid            uuid;
+    -- add if not exists udf_doctor_id                uuid;
 --##
-update voucher v
-set branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
+UPDATE voucher v
+SET branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
     branch_gst_location_id = b.branch_gst ->> 'location_id',
     branch_gst_no          = b.branch_gst ->> 'gst_no',
     party_gst_reg_type     = b.party_gst ->> 'reg_type',
     party_gst_location_id  = b.party_gst ->> 'location_id',
     party_gst_no           = b.party_gst ->> 'gst_no',
-    warehouse_id           = b.warehouse_id,
+    warehouse_id           = w.uuid_id,
     warehouse_name         = b.warehouse_name,
-    vendor_id              = b.vendor_id,
+    vendor_id              = a.uuid_id,
     vendor_name            = b.vendor_name,
     disc_mode              = b.discount_mode,
     discount               = b.discount_amount,
-    rounded_off            = b.rounded_off
-from debit_note b
-where v.id = b.voucher_id;
+    rounded_off            = b.rounded_off,
+    branch_uuid            = br.uuid_id,
+    voucher_type_uuid      = vt.uuid_id
+FROM debit_note b
+    LEFT JOIN warehouse w ON b.warehouse_id = w.id
+    LEFT JOIN account a   ON b.vendor_id = a.id
+    LEFT JOIN branch br ON b.branch_id = br.id
+    LEFT JOIN voucher_type vt on b.voucher_type_id = vt.id
+WHERE v.id = b.voucher_id;
 --##
-update voucher v
-set branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
+UPDATE voucher v
+SET branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
     branch_gst_location_id = b.branch_gst ->> 'location_id',
     branch_gst_no          = b.branch_gst ->> 'gst_no',
     party_gst_reg_type     = b.party_gst ->> 'reg_type',
     party_gst_location_id  = b.party_gst ->> 'location_id',
     party_gst_no           = b.party_gst ->> 'gst_no',
-    warehouse_id           = b.warehouse_id,
+    warehouse_id           = w.uuid_id,
     warehouse_name         = b.warehouse_name,
-    customer_id            = b.customer_id,
+    customer_id            = a.uuid_id,
     customer_name          = b.customer_name,
     disc_mode              = b.discount_mode,
     discount               = b.discount_amount,
     rounded_off            = b.rounded_off,
-    sales_person_id        = b.s_inc_id
-from credit_note b
-where v.id = b.voucher_id;
+    sales_person_id        = sp.uuid_id,
+    branch_uuid            = br.uuid_id,
+    voucher_type_uuid      = vt.uuid_id
+FROM credit_note b
+    LEFT JOIN warehouse w ON w.id = b.warehouse_id
+    LEFT JOIN account a   ON a.id = b.customer_id
+    LEFT JOIN sales_person sp on b.s_inc_id = sp.id
+    LEFT JOIN branch br ON b.branch_id = br.id
+    LEFT JOIN voucher_type vt on b.voucher_type_id = vt.id
+WHERE v.id = b.voucher_id;
 --##
-update voucher v
-set warehouse_id            = b.warehouse_id,
+UPDATE voucher v
+SET warehouse_id            = w.uuid_id,
     warehouse_name          = b.warehouse_name,
-    udf_alt_branch_id       = b.alt_branch_id,
-    udf_alt_warehouse_id    = b.alt_warehouse_id,
-    udf_transfer_voucher_id = b.transfer_voucher_id,
-    udf_approved            = b.approved
-from stock_journal b
-where v.id = b.voucher_id;
+    udf_alt_branch_id       = br.uuid_id,
+    udf_alt_warehouse_id    = w.uuid_id,
+    udf_transfer_voucher_id = tv.session,
+    udf_approved            = b.approved,
+    branch_uuid             = br.uuid_id,
+    voucher_type_uuid       = vt.uuid_id
+FROM stock_journal b
+    LEFT JOIN warehouse w ON w.id = b.warehouse_id
+    LEFT JOIN branch br   ON br.id = b.branch_id
+    LEFT JOIN voucher tv  ON tv.id = b.transfer_voucher_id
+    LEFT JOIN voucher_type vt on vt.id = b.voucher_type_id
+WHERE v.id = b.voucher_id;
 --##
-update voucher v
-set warehouse_id   = b.warehouse_id,
+UPDATE voucher v
+SET warehouse_id   = w.uuid_id,
     warehouse_name = b.warehouse_name,
-    vendor_id      = b.vendor_id,
-    vendor_name    = b.vendor_name
-from goods_inward_note b
-where v.id = b.voucher_id;
+    vendor_id      = a.uuid_id,
+    vendor_name    = b.vendor_name,
+    branch_uuid    = br.uuid_id
+FROM goods_inward_note b
+    LEFT JOIN warehouse w ON w.id = b.warehouse_id
+    LEFT JOIN account a   ON a.id = b.vendor_id
+    LEFT JOIN branch br   ON br.id = b.branch_id
+WHERE v.id = b.voucher_id;
 --##
-update voucher v
-set branch_gst_reg_type     = b.branch_gst ->> 'reg_type',
-    branch_gst_location_id  = b.branch_gst ->> 'location_id',
-    branch_gst_no           = b.branch_gst ->> 'gst_no',
-    warehouse_id            = b.warehouse_id,
-    warehouse_name          = b.warehouse_name
-from personal_use_purchase b
-where v.id = b.voucher_id;
+UPDATE voucher v
+SET branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
+    branch_gst_location_id = b.branch_gst ->> 'location_id',
+    branch_gst_no          = b.branch_gst ->> 'gst_no',
+    warehouse_id           = w.uuid_id,
+    warehouse_name         = b.warehouse_name,
+    branch_uuid            = br.uuid_id,
+    voucher_type_uuid      = vt.uuid_id
+FROM personal_use_purchase b
+    LEFT JOIN warehouse w ON w.id = b.warehouse_id
+    LEFT JOIN branch br   ON br.id = b.branch_id
+    LEFT JOIN voucher_type vt on vt.id = b.voucher_type_id
+WHERE v.id = b.voucher_id;
 --##
-update voucher v
-set branch_gst_reg_type          = b.branch_gst ->> 'reg_type',
-    branch_gst_location_id       = b.branch_gst ->> 'location_id',
-    branch_gst_no                = b.branch_gst ->> 'gst_no',
-    party_gst_reg_type           = b.party_gst ->> 'reg_type',
-    party_gst_location_id        = b.party_gst ->> 'location_id',
-    party_gst_no                 = b.party_gst ->> 'gst_no',
-    warehouse_id                 = b.warehouse_id,
-    warehouse_name               = b.warehouse_name,
-    vendor_id                    = b.vendor_id,
-    vendor_name                  = b.vendor_name,
-    customer_id                  = b.customer_id,
-    customer_name                = b.customer_name,
-    rounded_off                  = b.rounded_off,
-    disc_mode                    = b.discount_mode,
-    discount                     = b.discount_amount,
-    sale_value                   = b.sale_value,
-    profit_value                 = b.profit_value,
-    nlc_value                    = b.nlc_value,
-    valid_provisional_profit     = b.valid_provisional_profit
-from purchase_bill b
-where v.id = b.voucher_id;
+UPDATE voucher v
+SET branch_gst_reg_type      = b.branch_gst ->> 'reg_type',
+    branch_gst_location_id   = b.branch_gst ->> 'location_id',
+    branch_gst_no            = b.branch_gst ->> 'gst_no',
+    party_gst_reg_type       = b.party_gst ->> 'reg_type',
+    party_gst_location_id    = b.party_gst ->> 'location_id',
+    party_gst_no             = b.party_gst ->> 'gst_no',
+    warehouse_id             = w.uuid_id,
+    warehouse_name           = b.warehouse_name,
+    vendor_id                = a.uuid_id,
+    vendor_name              = b.vendor_name,
+    customer_id              = ac.uuid_id,
+    customer_name            = b.customer_name,
+    rounded_off              = b.rounded_off,
+    disc_mode                = b.discount_mode,
+    discount                 = b.discount_amount,
+    sale_value               = b.sale_value,
+    profit_value             = b.profit_value,
+    nlc_value                = b.nlc_value,
+    valid_provisional_profit = b.valid_provisional_profit,
+    branch_uuid              = br.uuid_id,
+    voucher_type_uuid        = vt.uuid_id
+FROM purchase_bill b
+    LEFT JOIN warehouse w ON b.warehouse_id = w.id
+    LEFT JOIN account a   ON b.vendor_id = a.id
+    LEFT JOIN account ac  ON b.customer_id = ac.id
+    LEFT JOIN branch br   ON br.id = b.branch_id
+    LEFT JOIN voucher_type vt on vt.id = b.voucher_type_id
+WHERE v.id = b.voucher_id;
 --##
-update voucher v
-set branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
+UPDATE voucher v
+SET branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
     branch_gst_location_id = b.branch_gst ->> 'location_id',
     branch_gst_no          = b.branch_gst ->> 'gst_no',
     party_gst_reg_type     = b.party_gst ->> 'reg_type',
     party_gst_location_id  = b.party_gst ->> 'location_id',
     party_gst_no           = b.party_gst ->> 'gst_no',
-    warehouse_id           = b.warehouse_id,
+    warehouse_id           = w.uuid_id,
     warehouse_name         = b.warehouse_name,
-    customer_id            = b.customer_id,
+    customer_id            = a.uuid_id,
     customer_name          = b.customer_name,
     disc_mode              = b.discount_mode,
     discount               = b.discount_amount,
     rounded_off            = b.rounded_off,
-    sales_person_id        = b.s_inc_id
-    -- udf_doctor_id          = b.doctor_id
-from sale_bill b
-where v.id = b.voucher_id;
+    sales_person_id        = sp.uuid_id,
+    branch_uuid            = br.uuid_id,
+    voucher_type_uuid      = vt.uuid_id
+--     udf_doctor_id          = ud.uuid_id
+FROM sale_bill b
+    LEFT JOIN warehouse w     ON w.id = b.warehouse_id
+    LEFT JOIN account a       ON a.id = b.customer_id
+    LEFT JOIN sales_person sp ON sp.id = b.s_inc_id
+    LEFT JOIN branch br   ON br.id = b.branch_id
+    LEFT JOIN voucher_type vt on vt.id = b.voucher_type_id
+--     LEFT JOIN udm_doctor ud   ON ud.id = b.doctor_id
+WHERE v.id = b.voucher_id;
 --##
 --##
-update voucher v
-set branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
+UPDATE voucher v
+SET branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
     branch_gst_location_id = b.branch_gst ->> 'location_id',
     branch_gst_no          = b.branch_gst ->> 'gst_no',
     party_gst_reg_type     = b.party_gst ->> 'reg_type',
     party_gst_location_id  = b.party_gst ->> 'location_id',
     party_gst_no           = b.party_gst ->> 'gst_no',
-    warehouse_id           = b.warehouse_id,
+    warehouse_id           = w.uuid_id,
     warehouse_name         = b.warehouse_name,
-    customer_id            = b.customer_id,
+    customer_id            = a.uuid_id,
     customer_name          = b.customer_name,
     disc_mode              = b.discount_mode,
     discount               = b.discount_amount,
     rounded_off            = b.rounded_off,
-    sales_person_id        = b.s_inc_id
-from sale_quotation b
-where v.id = b.voucher_id;
+    sales_person_id        = sp.uuid_id,
+    branch_uuid            = br.uuid_id,
+    voucher_type_uuid      = vt.uuid_id
+FROM sale_quotation b
+    LEFT JOIN warehouse w     ON w.id = b.warehouse_id
+    LEFT JOIN account a       ON a.id = b.customer_id
+    LEFT JOIN sales_person sp ON sp.id = b.s_inc_id
+    LEFT JOIN branch br   ON br.id = b.branch_id
+    LEFT JOIN voucher_type vt on vt.id = b.voucher_type_id
+WHERE v.id = b.voucher_id;
 --##
 alter table voucher
     alter column mode set not null,
     alter column e_invoice_details type jsonb using e_invoice_details::jsonb,
     alter column eway_bill_details type jsonb using eway_bill_details::jsonb;
--- voucher uuid related changes
-ALTER TABLE voucher ADD COLUMN IF NOT EXISTS vendor_uuid uuid;
-ALTER TABLE voucher ADD COLUMN IF NOT EXISTS customer_uuid uuid;
-ALTER TABLE voucher ADD COLUMN IF NOT EXISTS branch_uuid uuid;
-ALTER TABLE voucher ADD COLUMN IF NOT EXISTS udf_alt_branch_uuid uuid;
-ALTER TABLE voucher ADD COLUMN IF NOT EXISTS udf_transfer_voucher_uuid uuid;
-ALTER TABLE voucher ADD COLUMN IF NOT EXISTS udf_alt_warehouse_uuid uuid;
--- ALTER TABLE voucher ADD COLUMN IF NOT EXISTS udf_doctor_uuid uuid;
-ALTER TABLE voucher ADD COLUMN IF NOT EXISTS sales_person_uuid uuid;
-ALTER TABLE voucher ADD COLUMN IF NOT EXISTS voucher_type_uuid uuid;
-ALTER TABLE voucher ADD COLUMN IF NOT EXISTS warehouse_uuid uuid;
-------------------
-select now() as time, 'UUID_CHANGES FOR VOUCHER VENDOR_ID STARTS' as msg;
-create index on voucher (vendor_id, vendor_uuid, id);
-DO
-$$
-    DECLARE
-        v_updated   INT;
-        v_remaining BIGINT;
-    BEGIN
-        LOOP
-            UPDATE voucher i
-            SET vendor_uuid = a.uuid_id
-            FROM account a
-            WHERE a.id = i.vendor_id
-              AND i.vendor_uuid IS NULL
-              AND i.id IN (SELECT id
-                           FROM voucher
-                           WHERE vendor_uuid IS NULL
-                           LIMIT 10000);
-
-            GET DIAGNOSTICS v_updated = ROW_COUNT;
-            select count(1)
-            into v_remaining
-            from voucher
-            where vendor_uuid is null;
-            RAISE NOTICE 'Updated: %', v_updated;
-            RAISE NOTICE 'Remaining: %', v_remaining;
-            EXIT WHEN v_updated = 0;
-        END LOOP;
-    END
-$$;
-select now() as time, 'UUID_CHANGES FOR VOUCHER VENDOR_ID ENDS' as msg;
-------------------
-select now() as time, 'UUID_CHANGES FOR VOUCHER CUSTOMER_ID STARTS' as msg;
-create index on voucher (customer_id, customer_uuid, id);
-DO
-$$
-    DECLARE
-        v_updated   INT;
-        v_remaining BIGINT;
-    BEGIN
-        LOOP
-            UPDATE voucher i
-            SET customer_uuid = a.uuid_id
-            FROM account a
-            WHERE a.id = i.customer_id
-              AND i.customer_uuid IS NULL
-              AND i.id IN (SELECT id
-                           FROM voucher
-                           WHERE customer_uuid IS NULL
-                           LIMIT 10000);
-
-            GET DIAGNOSTICS v_updated = ROW_COUNT;
-            select count(1)
-            into v_remaining
-            from voucher
-            where customer_uuid is null;
-            RAISE NOTICE 'Updated: %', v_updated;
-            RAISE NOTICE 'Remaining: %', v_remaining;
-            EXIT WHEN v_updated = 0;
-        END LOOP;
-    END
-$$;
-select now() as time, 'UUID_CHANGES FOR VOUCHER CUSTOMER_ID ENDS' as msg;
 ------------------
 select now() as time, 'UUID_CHANGES FOR VOUCHER BRANCH_ID STARTS' as msg;
 create index on voucher (branch_id, branch_uuid, id);
@@ -1687,47 +1650,21 @@ $$
 $$;
 select now() as time, 'UUID_CHANGES FOR VOUCHER BRANCH_ID ENDS' as msg;
 ------------------
-UPDATE voucher b SET udf_alt_branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.udf_alt_branch_id;
-------------------
-UPDATE voucher b SET udf_transfer_voucher_uuid = a.session FROM voucher a WHERE a.id = b.udf_transfer_voucher_id;
-------------------
-UPDATE voucher b SET udf_alt_warehouse_uuid = a.uuid_id FROM warehouse a WHERE a.id = b.udf_alt_warehouse_id;
-------------------
--- UPDATE voucher b SET udf_doctor_uuid = a.uuid_id FROM udm_doctor a WHERE a.id = b.udf_doctor_id;
-------------------
-select now() as time, 'UUID_CHANGES FOR VOUCHER SALES_PERSON_ID STARTS' as msg;
-create index on voucher (sales_person_id, sales_person_uuid, id);
-DO
-$$
-    DECLARE
-        v_updated   INT;
-        v_remaining BIGINT;
-    BEGIN
-        LOOP
-            UPDATE voucher i
-            SET sales_person_uuid = a.uuid_id
-            FROM sales_person a
-            WHERE a.id = i.sales_person_id
-              AND i.sales_person_uuid IS NULL
-              AND i.id IN (SELECT id
-                           FROM voucher
-                           WHERE sales_person_uuid IS NULL
-                           LIMIT 10000);
-
-            GET DIAGNOSTICS v_updated = ROW_COUNT;
-            select count(1)
-            into v_remaining
-            from voucher
-            where sales_person_uuid is null;
-            RAISE NOTICE 'Updated: %', v_updated;
-            RAISE NOTICE 'Remaining: %', v_remaining;
-            EXIT WHEN v_updated = 0;
-        END LOOP;
-    END
-$$;
-select now() as time, 'UUID_CHANGES FOR VOUCHER SALES_PERSON_ID ENDS' as msg;
-------------------
 select now() as time, 'UUID_CHANGES FOR VOUCHER VOUCHER_TYPE_ID STARTS' as msg;
+CREATE INDEX ON voucher (voucher_type_id);
+    UPDATE voucher b SET voucher_type_uuid = '01955427-0c00-703c-8000-000000000000' WHERE b.voucher_type_id = 1;
+    UPDATE voucher b SET voucher_type_uuid = '0195594d-6800-703d-8000-000000000000' WHERE b.voucher_type_id = 2;
+    UPDATE voucher b SET voucher_type_uuid = '01955e73-c400-703e-8000-000000000000' WHERE b.voucher_type_id = 3;
+    UPDATE voucher b SET voucher_type_uuid = '0195639a-2000-703f-8000-000000000000' WHERE b.voucher_type_id = 4;
+    UPDATE voucher b SET voucher_type_uuid = '019568c0-7c00-7040-8000-000000000000' WHERE b.voucher_type_id = 5;
+    UPDATE voucher b SET voucher_type_uuid = '01956de6-d800-7041-8000-000000000000' WHERE b.voucher_type_id = 6;
+    UPDATE voucher b SET voucher_type_uuid = '0195730d-3400-7042-8000-000000000000' WHERE b.voucher_type_id = 7;
+    UPDATE voucher b SET voucher_type_uuid = '01957833-9000-7043-8000-000000000000' WHERE b.voucher_type_id = 8;
+    UPDATE voucher b SET voucher_type_uuid = '01957d59-ec00-7044-8000-000000000000' WHERE b.voucher_type_id = 9;
+    UPDATE voucher b SET voucher_type_uuid = '01958280-4800-7045-8000-000000000000' WHERE b.voucher_type_id = 10;
+    UPDATE voucher b SET voucher_type_uuid = '019587a6-a400-7046-8000-000000000000' WHERE b.voucher_type_id = 17;
+    UPDATE voucher b SET voucher_type_uuid = '01958ccd-0000-7047-8000-000000000000' WHERE b.voucher_type_id = 21;
+    UPDATE voucher b SET voucher_type_uuid = '019591f3-5c00-7048-8000-000000000000' WHERE b.voucher_type_id = 23;
 create index on voucher (voucher_type_id, voucher_type_uuid, id);
 DO
 $$
@@ -1758,38 +1695,6 @@ $$
     END
 $$;
 select now() as time, 'UUID_CHANGES FOR VOUCHER VOUCHER_TYPE_ID ENDS' as msg;
-------------------
-select now() as time, 'UUID_CHANGES FOR VOUCHER WAREHOUSE_ID STARTS' as msg;
-create index on voucher (warehouse_id, warehouse_uuid, id);
-DO
-$$
-    DECLARE
-        v_updated   INT;
-        v_remaining BIGINT;
-    BEGIN
-        LOOP
-            UPDATE voucher i
-            SET warehouse_uuid = a.uuid_id
-            FROM warehouse a
-            WHERE a.id = i.warehouse_id
-              AND i.warehouse_uuid IS NULL
-              AND i.id IN (SELECT id
-                           FROM voucher
-                           WHERE warehouse_uuid IS NULL
-                           LIMIT 10000);
-
-            GET DIAGNOSTICS v_updated = ROW_COUNT;
-            select count(1)
-            into v_remaining
-            from voucher
-            where warehouse_uuid is null;
-            RAISE NOTICE 'Updated: %', v_updated;
-            RAISE NOTICE 'Remaining: %', v_remaining;
-            EXIT WHEN v_updated = 0;
-        END LOOP;
-    END
-$$;
-select now() as time, 'UUID_CHANGES FOR VOUCHER WAREHOUSE_ID ENDS' as msg;
 select now() as time, 'UUID_CHANGES FOR VOUCHER ENDS' as msg;
 ------------------
 --## VOUCHER
@@ -2086,17 +1991,17 @@ alter table inv_txn
     add if not exists nlc                      float,
     add if not exists cost                     float,
     add if not exists landing_cost             float,
-    add if not exists disc_mode1                text,
-    add if not exists discount1                 float,
-    add if not exists disc_mode2                text,
-    add if not exists discount2                 float,
-    add if not exists disc_mode3                text,
-    add if not exists discount3                 float,
+    add if not exists disc_mode1               text,
+    add if not exists discount1                float,
+    add if not exists disc_mode2               text,
+    add if not exists discount2                float,
+    add if not exists disc_mode3               text,
+    add if not exists discount3                float,
     add if not exists hsn_code                 text,
     add if not exists cess_on_qty              float,
     add if not exists cess_on_val              float,
-    add if not exists customer_id              int,
-    add if not exists sales_person_id          int,
+    add if not exists customer_id              uuid,
+    add if not exists sales_person_id          uuid,
     add if not exists dummy                    bool,
     add if not exists section_id               uuid,
     add if not exists manufacturer_id          uuid,
@@ -2126,11 +2031,12 @@ from credit_note_inv_item i
          left join batch b on b.id = i.batch_id
 where t.id = i.id;
 --##
-update inv_txn t
-set customer_id = b.customer_id
-from credit_note b
-where b.customer_id is not null
-  and t.voucher_id = b.voucher_id;
+UPDATE inv_txn t
+SET customer_id = a.uuid_id
+FROM credit_note b
+LEFT JOIN account a ON a.id = b.customer_id
+    WHERE t.voucher_id = b.voucher_id
+  AND b.customer_id IS NOT NULL;
 --##
 update inv_txn t
 set sno                 = i.sno,
@@ -2158,9 +2064,10 @@ from debit_note_inv_item i
 where t.id = i.id;
 --##
 update inv_txn t
-set vendor_id   = b.vendor_id,
+set vendor_uuid = a.uuid_id,
     vendor_name = b.vendor_name
 from debit_note b
+    left join account a on a.id = b.vendor_id
 where b.vendor_id is not null
   and t.voucher_id = b.voucher_id;
 --##
@@ -2210,10 +2117,12 @@ from purchase_bill_inv_item i
 where t.id = i.id;
 --##
 update inv_txn t
-set vendor_id     = b.vendor_id,
+set vendor_uuid    = vid.uuid_id,
     vendor_name   = b.vendor_name,
-    customer_id   = b.customer_id
+    customer_id   = cid.uuid_id
 from purchase_bill b
+    left join account cid on cid.id = b.customer_id
+    left join account vid on vid.id = b.vendor_id
 where t.voucher_id = b.voucher_id;
 --##
 --##
@@ -2229,21 +2138,23 @@ set sno                      = i.sno,
     hsn_code                 = i.hsn_code,
     cess_on_qty              = i.cess_on_qty,
     cess_on_val              = i.cess_on_val,
-    sales_person_id          = i.s_inc_id,
+    sales_person_id          = sp.uuid_id,
     -- udf_drug_classifications = i.drug_classifications,
     batch_no                 = b.batch_no,
-    vendor_uuid      = b.vendor_uuid,
+    vendor_uuid              = b.vendor_uuid,
     section_id               = inv.section_id,
     manufacturer_id          = inv.manufacturer_id
 from sale_bill_inv_item i
     left join inventory inv on inv.id = i.inventory_id
-         left join unit_conversion uc on uc.conversion = case when i.is_retail_qty then 1 else inv.retail_qty end
-         left join batch b on b.id = i.batch_id
+    left join unit_conversion uc on uc.conversion = case when i.is_retail_qty then 1 else inv.retail_qty end
+    left join batch b on b.id = i.batch_id
+    left join sales_person sp on sp.id = i.s_inc_id
 where t.id = i.id;
 --##
 update inv_txn t
-set customer_id   = b.customer_id
+set customer_id   = cid.uuid_id
 from sale_bill b
+    left join account cid on cid.id = b.customer_id
 where b.customer_id is not null
   and t.voucher_id = b.voucher_id;
 --##
@@ -2292,10 +2203,8 @@ alter table inv_txn
     alter column outward set not null;
 -- inv_txn uuid related changes
 ALTER TABLE inv_txn ADD COLUMN IF NOT EXISTS vendor_uuid uuid;
-ALTER TABLE inv_txn ADD COLUMN IF NOT EXISTS customer_uuid uuid;
 ALTER TABLE inv_txn ADD COLUMN IF NOT EXISTS branch_uuid uuid;
 ALTER TABLE inv_txn ADD COLUMN IF NOT EXISTS inventory_uuid uuid;
-ALTER TABLE inv_txn ADD COLUMN IF NOT EXISTS sales_person_uuid uuid;
 ALTER TABLE inv_txn ADD COLUMN IF NOT EXISTS voucher_uuid uuid;
 ALTER TABLE inv_txn ADD COLUMN IF NOT EXISTS voucher_type_uuid uuid;
 ALTER TABLE inv_txn ADD COLUMN IF NOT EXISTS warehouse_uuid uuid;
@@ -2333,38 +2242,6 @@ $$
     END
 $$;
 select now() as time, 'UUID_CHANGES FOR INV_TXN VENDOR_ID ENDS' as msg;
-------------------
-select now() as time, 'UUID_CHANGES FOR INV_TXN CUSTOMER_ID STARTS' as msg;
-create index on inv_txn (customer_id, customer_uuid, id);
-DO
-$$
-    DECLARE
-        v_updated   INT;
-        v_remaining BIGINT;
-    BEGIN
-        LOOP
-            UPDATE inv_txn i
-            SET customer_uuid = a.uuid_id
-            FROM account a
-            WHERE a.id = i.customer_id
-              AND i.customer_uuid IS NULL
-              AND i.id IN (SELECT id
-                           FROM inv_txn
-                           WHERE customer_uuid IS NULL
-                           LIMIT 10000);
-
-            GET DIAGNOSTICS v_updated = ROW_COUNT;
-            select count(1)
-            into v_remaining
-            from inv_txn
-            where customer_uuid is null;
-            RAISE NOTICE 'Updated: %', v_updated;
-            RAISE NOTICE 'Remaining: %', v_remaining;
-            EXIT WHEN v_updated = 0;
-        END LOOP;
-    END
-$$;
-select now() as time, 'UUID_CHANGES FOR INV_TXN CUSTOMER_ID ENDS' as msg;
 ------------------
 select now() as time, 'UUID_CHANGES FOR INV_TXN BRANCH_ID STARTS' as msg;
 create index on inv_txn (branch_id, branch_uuid, id);
@@ -2429,38 +2306,6 @@ $$
     END
 $$;
 select now() as time, 'UUID_CHANGES FOR INV_TXN INVENTORY_ID ENDS' as msg;
-------------------
-select now() as time, 'UUID_CHANGES FOR INV_TXN SALES_PERSON_ID STARTS' as msg;
-create index on inv_txn (sales_person_id, sales_person_uuid, id);
-DO
-$$
-    DECLARE
-        v_updated   INT;
-        v_remaining BIGINT;
-    BEGIN
-        LOOP
-            UPDATE inv_txn i
-            SET sales_person_uuid = a.uuid_id
-            FROM sales_person a
-            WHERE a.id = i.sales_person_id
-              AND i.sales_person_uuid IS NULL
-              AND i.id IN (SELECT id
-                           FROM inv_txn
-                           WHERE sales_person_uuid IS NULL
-                           LIMIT 10000);
-
-            GET DIAGNOSTICS v_updated = ROW_COUNT;
-            select count(1)
-            into v_remaining
-            from inv_txn
-            where sales_person_uuid is null;
-            RAISE NOTICE 'Updated: %', v_updated;
-            RAISE NOTICE 'Remaining: %', v_remaining;
-            EXIT WHEN v_updated = 0;
-        END LOOP;
-    END
-$$;
-select now() as time, 'UUID_CHANGES FOR INV_TXN SALES_PERSON_ID ENDS' as msg;
 ------------------
 select now() as time, 'UUID_CHANGES FOR INV_TXN VOUCHER_ID STARTS' as msg;
 create index on inv_txn (voucher_id, voucher_uuid, id);
@@ -3010,15 +2855,6 @@ delete from unit_conversion where conversion = 1;
         alter table inv_txn drop column if exists vendor_id;
         alter table inv_txn rename column vendor_uuid to vendor_id;
         --
-        alter table inv_txn drop column if exists customer_id;
-        alter table inv_txn rename column customer_uuid to customer_id;
-        --
-        alter table voucher drop column if exists vendor_id;
-        alter table voucher rename column vendor_uuid to vendor_id;
-        --
-        alter table voucher drop column if exists customer_id;
-        alter table voucher rename column customer_uuid to customer_id;
-        --
         alter table inventory_branch_detail drop column if exists preferred_vendor_id;
         alter table inventory_branch_detail rename column preferred_vendor_uuid to preferred_vendor_id;
         --
@@ -3121,9 +2957,6 @@ delete from unit_conversion where conversion = 1;
         alter table voucher drop column if exists branch_id;
         alter table voucher rename column branch_uuid to branch_id;
         alter table voucher alter column branch_id set not null;
-        --
-        alter table voucher drop column if exists udf_alt_branch_id;
-        alter table voucher rename column udf_alt_branch_uuid to udf_alt_branch_id;
 -- GST_REGISTRATION
     alter table gst_registration drop column if exists id;
     alter table gst_registration rename column uuid_id to id;
@@ -3168,12 +3001,6 @@ delete from unit_conversion where conversion = 1;
     alter table sales_person rename column uuid_id to id;
     alter table sales_person alter column id set not null;
     ALTER TABLE sales_person ADD CONSTRAINT sales_person_pkey PRIMARY KEY (id);
-        --
-        alter table inv_txn drop column if exists sales_person_id;
-        alter table inv_txn rename column sales_person_uuid to sales_person_id;
-        --
-        alter table voucher drop column if exists sales_person_id;
-        alter table voucher rename column sales_person_uuid to sales_person_id;
 -- TDS_NATURE_OF_PAYMENT
     alter table tds_nature_of_payment drop column if exists id;
     alter table tds_nature_of_payment rename column uuid_id to id;
@@ -3211,9 +3038,6 @@ delete from unit_conversion where conversion = 1;
     alter table voucher alter column id set not null;
     ALTER TABLE voucher ADD CONSTRAINT voucher_pkey PRIMARY KEY (id);
     alter table voucher drop constraint voucher_session_key;
-    --
-    alter table voucher drop column if exists udf_transfer_voucher_id;
-    alter table voucher rename column udf_transfer_voucher_uuid to udf_transfer_voucher_id;
         --
         alter table ac_txn drop column if exists voucher_id;
         alter table ac_txn rename column voucher_uuid to voucher_id;
@@ -3268,12 +3092,6 @@ delete from unit_conversion where conversion = 1;
         alter table inv_txn drop column if exists warehouse_id;
         alter table inv_txn rename column warehouse_uuid to warehouse_id;
         alter table inv_txn alter column warehouse_id set not null;
-        --
-        alter table voucher drop column if exists warehouse_id;
-        alter table voucher rename column warehouse_uuid to warehouse_id;
-        --
-        alter table voucher drop column if exists udf_alt_warehouse_id;
-        alter table voucher rename column udf_alt_warehouse_uuid to udf_alt_warehouse_id;
 -- MEMBER
     alter table member drop column if exists id;
     alter table member rename column uuid_id to id;
@@ -3310,9 +3128,6 @@ delete from unit_conversion where conversion = 1;
     alter table udm_doctor rename column uuid_id to id;
     alter table udm_doctor alter column id set not null;
     ALTER TABLE udm_doctor ADD CONSTRAINT udm_doctor_pkey PRIMARY KEY (id);
-        --
-        alter table voucher drop column if exists udf_doctor_id;
-        alter table voucher rename column udf_doctor_uuid to udf_doctor_id;
 -- UDM_DRUG_CLASSIFICATION
     alter table udm_drug_classification drop column if exists id;
     alter table udm_drug_classification rename column uuid_id to id;
