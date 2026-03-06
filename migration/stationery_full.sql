@@ -2502,6 +2502,7 @@ select now() as time, 'UUID_CHANGES FOR INV_TXN BATCH_ID ENDS' as msg;
 -------------------------------------------------------------------------------------------------
 ---- INDEX RESTORE
 -------------------------------------------------------------------------------------------------
+select now() as time, 'ADDING REQUIRED INDEX START' as msg;
 --## ac_txn
     create index on ac_txn (voucher_id);
     create index on ac_txn (date);
@@ -2537,13 +2538,14 @@ select now() as time, 'UUID_CHANGES FOR INV_TXN BATCH_ID ENDS' as msg;
     create index on voucher (voucher_no);
     create index on voucher (branch_id);
     create index on voucher (base_voucher_type);
-
+select now() as time, 'ADDING REQUIRED INDEX END' as msg;
 --## last query
 delete from unit_conversion where conversion = 1;
 
 -------------------------------------------------------------------------------------------------
 ---- DROP UNWANTED COLUMN, EXPRESSION, DEFAULT
 -------------------------------------------------------------------------------------------------
+select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
 -- AC_TXN --
     alter table ac_txn alter column amount drop expression;
     alter table ac_txn drop column if exists is_opening;
@@ -2816,10 +2818,11 @@ delete from unit_conversion where conversion = 1;
     drop table if exists tally_account_map;
     drop table if exists vault;
     drop table if exists seaql_migrations;
-
+select now() as time, 'DROPPING UNWANTED COLUMN & TABLE END' as msg;
 -------------------------------------------------------------------------------------------------
 ---- DROP UNWANTED COLUMN AND RENAME THE REQUIRED ONE
 -------------------------------------------------------------------------------------------------
+select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
 -- ACCOUNT
     alter table account drop column if exists id;
     alter table account rename column uuid_id to id;
@@ -3176,10 +3179,11 @@ delete from unit_conversion where conversion = 1;
         alter table inventory drop column if exists udf_compositions;
         alter table inventory rename column udf_compositions_uuid to udf_compositions;
     */
-
+select now() as time, 'RENAMING AND DROPPING UUID COLUMN END' as msg;
 -------------------------------------------------------------------------------------------------
 ---- DROP TEMP INDEX
 -------------------------------------------------------------------------------------------------
+select now() as time, 'DROPPING TEMP INDEX START' as msg;
 -- AC_TXN
 DROP INDEX if exists ac_txn_account_id_account_uuid_id_idx;
 DROP INDEX if exists ac_txn_alt_account_id_alt_account_uuid_id_idx;
@@ -3211,3 +3215,4 @@ DROP INDEX if exists voucher_branch_id_branch_uuid_id_idx;
 DROP INDEX if exists voucher_sales_person_id_sales_person_uuid_id_idx;
 DROP INDEX if exists voucher_vocher_type_id_vocher_type_uuid_id_idx;
 DROP INDEX if exists voucher_warehouse_id_warehouse_uuid_id_idx;
+select now() as time, 'DROPPING TEMP INDEX END' as msg;
