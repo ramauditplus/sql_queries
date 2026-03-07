@@ -1271,6 +1271,7 @@ ALTER TABLE batch ADD COLUMN IF NOT EXISTS unit_uuid uuid;
 ALTER TABLE batch ADD COLUMN IF NOT EXISTS voucher_uuid uuid;
 ALTER TABLE batch ADD COLUMN IF NOT EXISTS warehouse_uuid uuid;
 ------------------
+/*
 create index on batch (vendor_id, vendor_uuid, id);
 DO
 $$
@@ -1300,7 +1301,11 @@ $$
         END LOOP;
     END
 $$;
+*/
+create index on batch (vendor_id);
+UPDATE batch b SET vendor_uuid = a.uuid_id FROM account a WHERE a.id = b.vendor_id;
 ------------------
+/*
 create index on batch (branch_id, branch_uuid, id);
 DO
 $$
@@ -1330,7 +1335,11 @@ $$
         END LOOP;
     END
 $$;
+*/
+create index on batch (branch_id);
+UPDATE batch b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
 ------------------
+/*
 create index on batch (inventory_id, inventory_uuid, id);
 DO
 $$
@@ -1362,6 +1371,13 @@ $$
         END LOOP;
     END
 $$;
+*/
+create index on batch (inventory_id);
+UPDATE batch b
+    SET inventory_uuid = a.uuid_id,
+        section_id = a.section_id,
+        manufacturer_id = a.manufacturer_id
+    FROM inventory a WHERE a.id = b.inventory_id;
 ------------------
 update batch b
     set unit_uuid = u.conversion_unit_id
@@ -1373,6 +1389,7 @@ update batch b
 ------------------
 alter table batch alter column unit_conv set not null;
 ------------------
+/*
 create index on batch (voucher_id, voucher_uuid, id);
 DO
 $$
@@ -1402,7 +1419,11 @@ $$
         END LOOP;
     END
 $$;
+*/
+create index on batch (voucher_id);
+UPDATE batch b SET voucher_uuid = a.session FROM voucher a WHERE a.id = b.voucher_id;
 ------------------
+/*
 create index on batch (warehouse_id, warehouse_uuid, id);
 DO
 $$
@@ -1432,6 +1453,9 @@ $$
         END LOOP;
     END
 $$;
+*/
+create index on batch (warehouse_id);
+UPDATE batch b SET warehouse_uuid = a.uuid_id FROM warehouse a WHERE a.id = b.warehouse_id;
 ------------------
 select now() as time, 'UUID_CHANGES FOR BATCH ENDS' as msg;
 --## BATCH
@@ -1649,6 +1673,7 @@ alter table voucher
     alter column eway_bill_details type jsonb using eway_bill_details::jsonb;
 ------------------
 select now() as time, 'UUID_CHANGES FOR VOUCHER BRANCH_ID STARTS' as msg;
+/*
 create index on voucher (branch_id, branch_uuid, id);
 DO
 $$
@@ -1678,9 +1703,13 @@ $$
         END LOOP;
     END
 $$;
+*/
+create index on voucher (branch_id);
+UPDATE voucher b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
 select now() as time, 'UUID_CHANGES FOR VOUCHER BRANCH_ID ENDS' as msg;
 ------------------
 select now() as time, 'UUID_CHANGES FOR VOUCHER VOUCHER_TYPE_ID STARTS' as msg;
+/*
 CREATE INDEX ON voucher (voucher_type_id);
     UPDATE voucher b SET voucher_type_uuid = '01955427-0c00-703c-8000-000000000000' WHERE b.voucher_type_id = 1;
     UPDATE voucher b SET voucher_type_uuid = '0195594d-6800-703d-8000-000000000000' WHERE b.voucher_type_id = 2;
@@ -1724,6 +1753,9 @@ $$
         END LOOP;
     END
 $$;
+*/
+create index on voucher (voucher_type_id);
+UPDATE voucher b SET voucher_type_uuid = a.uuid_id FROM voucher_type a WHERE a.id = b.voucher_type_id;
 select now() as time, 'UUID_CHANGES FOR VOUCHER VOUCHER_TYPE_ID ENDS' as msg;
 select now() as time, 'UUID_CHANGES FOR VOUCHER ENDS' as msg;
 ------------------
@@ -1775,6 +1807,7 @@ ALTER TABLE ac_txn ADD COLUMN IF NOT EXISTS voucher_uuid uuid;
 ALTER TABLE ac_txn ADD COLUMN IF NOT EXISTS voucher_type_uuid uuid;
 ------------------
 select now() as time, 'UUID_CHANGES FOR AC_TXN ACCOUNT_TYPE_ID AND ACCOUNT_ID STARTS' as msg;
+/*
     UPDATE ac_txn b SET account_uuid = '0194af5b-8c00-701c-8000-000000000000', account_type_uuid = '01947bdb-f400-7012-8000-000000000000' WHERE b.account_id = 1;
     UPDATE ac_txn b SET account_uuid = '0194b481-e800-701d-8000-000000000000', account_type_uuid = '01943e0f-a400-7006-8000-000000000000' WHERE b.account_id = 2;
     UPDATE ac_txn b SET account_uuid = '0194b9a8-4400-701e-8000-000000000000', account_type_uuid = '01944d82-b800-7009-8000-000000000000' WHERE b.account_id = 3;
@@ -1827,9 +1860,12 @@ $$
         END LOOP;
     END
 $$;
+*/
+UPDATE ac_txn b SET account_uuid = a.uuid_id, account_type_uuid = a.account_type_uuid FROM account a WHERE a.id = b.account_id;
 select now() as time, 'UUID_CHANGES FOR AC_TXN ACCOUNT_TYPE_ID AND ACCOUNT_ID ENDS' as msg;
 ------------------
 select now() as time, 'UUID_CHANGES FOR AC_TXN ALT_ACCOUNT_ID STARTS' as msg;
+/*
 create index on ac_txn(alt_account_id);
     UPDATE ac_txn b SET alt_account_uuid = '0194af5b-8c00-701c-8000-000000000000' WHERE b.alt_account_id = 1;
     UPDATE ac_txn b SET alt_account_uuid = '0194b481-e800-701d-8000-000000000000' WHERE b.alt_account_id = 2;
@@ -1882,9 +1918,13 @@ $$
         END LOOP;
     END
 $$;
+*/
+create index on ac_txn (alt_account_id);
+UPDATE ac_txn b SET alt_account_uuid = a.uuid_id FROM account a WHERE a.id = b.alt_account_id;
 select now() as time, 'UUID_CHANGES FOR AC_TXN ALT_ACCOUNT_ID ENDS' as msg;
 ------------------
 select now() as time, 'UUID_CHANGES FOR AC_TXN BRANCH_ID STARTS' as msg;
+/*
 create index on ac_txn (branch_id, branch_uuid, id);
 DO
 $$
@@ -1914,9 +1954,13 @@ $$
         END LOOP;
     END
 $$;
+*/
+create index on ac_txn (branch_id);
+UPDATE ac_txn b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
 select now() as time, 'UUID_CHANGES FOR AC_TXN BRANCH_ID ENDS' as msg;
 ------------------
 select now() as time, 'UUID_CHANGES FOR AC_TXN VOUCHER_ID STARTS' as msg;
+/*
 create index on ac_txn (voucher_id, voucher_uuid, id);
 DO
 $$
@@ -1946,9 +1990,13 @@ $$
         END LOOP;
     END
 $$;
+*/
+create index on ac_txn (voucher_id);
+UPDATE ac_txn b SET voucher_uuid = a.session FROM voucher a WHERE a.id = b.voucher_id;
 select now() as time, 'UUID_CHANGES FOR AC_TXN VOUCHER_ID ENDS' as msg;
 ------------------
 select now() as time, 'UUID_CHANGES FOR AC_TXN VOUCHER_TYPE_ID STARTS' as msg;
+/*
 CREATE INDEX ON ac_txn (voucher_type_id);
     UPDATE ac_txn b SET voucher_type_uuid = '01955427-0c00-703c-8000-000000000000' WHERE b.voucher_type_id = 1;
     UPDATE ac_txn b SET voucher_type_uuid = '0195594d-6800-703d-8000-000000000000' WHERE b.voucher_type_id = 2;
@@ -1993,6 +2041,9 @@ $$
         END LOOP;
     END
 $$;
+*/
+create index on ac_txn (voucher_type_id);
+UPDATE ac_txn b SET voucher_type_uuid = a.uuid_id FROM voucher_type a WHERE a.id = b.voucher_type_id;
 select now() as time, 'UUID_CHANGES FOR AC_TXN VOUCHER_TYPE_ID ENDS' as msg;
 ------------------
 --## AC_TXN
@@ -2242,6 +2293,7 @@ ALTER TABLE inv_txn ADD COLUMN IF NOT EXISTS warehouse_uuid uuid;
 -- ALTER TABLE inv_txn ADD COLUMN IF NOT EXISTS udf_drug_classifications_uuid uuid[];
 ------------------
 select now() as time, 'UUID_CHANGES FOR INV_TXN VENDOR_ID STARTS' as msg;
+/*
 create index on inv_txn (vendor_id, vendor_uuid, id);
 DO
 $$
@@ -2272,9 +2324,13 @@ $$
         END LOOP;
     END
 $$;
+*/
+create index on inv_txn (vendor_id);
+UPDATE inv_txn b SET vendor_uuid = a.uuid_id FROM account a WHERE a.id = b.vendor_id;
 select now() as time, 'UUID_CHANGES FOR INV_TXN VENDOR_ID ENDS' as msg;
 ------------------
 select now() as time, 'UUID_CHANGES FOR INV_TXN BRANCH_ID STARTS' as msg;
+/*
 create index on inv_txn (branch_id, branch_uuid, id);
 DO
 $$
@@ -2304,9 +2360,13 @@ $$
         END LOOP;
     END
 $$;
+*/
+create index on inv_txn (branch_id);
+UPDATE inv_txn b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
 select now() as time, 'UUID_CHANGES FOR INV_TXN BRANCH_ID ENDS' as msg;
 ------------------
 select now() as time, 'UUID_CHANGES FOR INV_TXN INVENTORY_ID STARTS' as msg;
+/*
 create index on inv_txn (inventory_id, inventory_uuid, id);
 DO
 $$
@@ -2336,9 +2396,13 @@ $$
         END LOOP;
     END
 $$;
+*/
+create index on inv_txn (inventory_id);
+UPDATE inv_txn b SET inventory_uuid = a.uuid_id FROM inventory a WHERE a.id = b.inventory_id;
 select now() as time, 'UUID_CHANGES FOR INV_TXN INVENTORY_ID ENDS' as msg;
 ------------------
 select now() as time, 'UUID_CHANGES FOR INV_TXN VOUCHER_ID STARTS' as msg;
+/*
 create index on inv_txn (voucher_id, voucher_uuid, id);
 DO
 $$
@@ -2368,10 +2432,14 @@ $$
         END LOOP;
     END
 $$;
+*/
+create index on inv_txn (voucher_id);
+UPDATE inv_txn b SET voucher_uuid = a.session FROM voucher a WHERE a.id = b.voucher_id;
 select now() as time, 'UUID_CHANGES FOR INV_TXN VOUCHER_ID ENDS' as msg;
 ------------------
 select now() as time, 'UUID_CHANGES FOR INV_TXN VOUCHER_TYPE_ID STARTS' as msg;
 ----------------------
+/*
 create index on inv_txn (voucher_type_id);
     UPDATE inv_txn b SET voucher_type_uuid = '01955427-0c00-703c-8000-000000000000' WHERE b.voucher_type_id = 1;
     UPDATE inv_txn b SET voucher_type_uuid = '0195594d-6800-703d-8000-000000000000' WHERE b.voucher_type_id = 2;
@@ -2417,9 +2485,13 @@ $$
         END LOOP;
     END
 $$;
+*/
+create index on inv_txn (voucher_type_id);
+UPDATE inv_txn b SET voucher_type_uuid = a.uuid_id FROM voucher_type a WHERE a.id = b.voucher_type_id;
 select now() as time, 'UUID_CHANGES FOR INV_TXN VOUCHER_TYPE_ID ENDS' as msg;
 ------------------
 select now() as time, 'UUID_CHANGES FOR INV_TXN WAREHOUSE_ID STARTS' as msg;
+/*
 create index on inv_txn (warehouse_id, warehouse_uuid, id);
 DO
 $$
@@ -2449,6 +2521,9 @@ $$
         END LOOP;
     END
 $$;
+*/
+create index on inv_txn (warehouse_id);
+UPDATE inv_txn b SET warehouse_uuid = a.uuid_id FROM warehouse a WHERE a.id = b.warehouse_id;
 select now() as time, 'UUID_CHANGES FOR INV_TXN WAREHOUSE_ID ENDS' as msg;
 ------------------
 /*
@@ -3189,6 +3264,7 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN END' as msg;
 ---- DROP TEMP INDEX
 -------------------------------------------------------------------------------------------------
 select now() as time, 'DROPPING TEMP INDEX START' as msg;
+/*
 -- AC_TXN
 DROP INDEX if exists ac_txn_account_id_account_uuid_id_idx;
 DROP INDEX if exists ac_txn_alt_account_id_alt_account_uuid_id_idx;
@@ -3220,4 +3296,28 @@ DROP INDEX if exists voucher_branch_id_branch_uuid_id_idx;
 DROP INDEX if exists voucher_sales_person_id_sales_person_uuid_id_idx;
 DROP INDEX if exists voucher_vocher_type_id_vocher_type_uuid_id_idx;
 DROP INDEX if exists voucher_warehouse_id_warehouse_uuid_id_idx;
+*/
+-- BATCH
+drop index if exists batch_vendor_id_idx;
+drop index if exists batch_branch_id_idx;
+drop index if exists batch_inventory_id_idx;
+drop index if exists batch_voucher_id_idx;
+drop index if exists batch_warehouse_id_idx;
+-- VOUCHER
+drop index if exists voucher_voucher_type_id_idx;
+drop index if exists voucher_branch_id_idx;
+-- AC_TXN
+drop index if exists ac_txn_alt_account_id_idx;
+drop index if exists ac_txn_branch_id_idx;
+drop index if exists ac_txn_voucher_id_idx;
+drop index if exists ac_txn_voucher_type_id_idx;
+-- INV_TXN
+drop index if exists inv_txn_vendor_id_idx;
+drop index if exists inv_txn_branch_id_idx;
+drop index if exists inv_txn_inventory_id_idx;
+drop index if exists inv_txn_voucher_id_idx;
+drop index if exists inv_txn_voucher_type_id_idx;
+drop index if exists inv_txn_warehouse_id_idx;
+drop index if exists inv_txn_batch_id_idx;
+--
 select now() as time, 'DROPPING TEMP INDEX END' as msg;

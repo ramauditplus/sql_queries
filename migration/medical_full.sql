@@ -2035,6 +2035,7 @@ alter table inv_txn
     add if not exists dummy                    bool,
     add if not exists section_id               uuid,
     add if not exists manufacturer_id          uuid,
+    add if not exists free_qty                 float,
     add if not exists vendor_uuid              uuid,
     add if not exists udf_drug_classifications int[];
 --##
@@ -2139,7 +2140,8 @@ set sno              = i.sno,
     batch_no         = b.batch_no,
     vendor_uuid      = b.vendor_uuid,
     section_id       = inv.section_id,
-    manufacturer_id  = inv.manufacturer_id
+    manufacturer_id  = inv.manufacturer_id,
+    free_qty         = i.free_qty
 from purchase_bill_inv_item i
     left join inventory inv on inv.id = i.inventory_id
          left join unit_conversion uc on uc.conversion = case when i.is_retail_qty then 1 else inv.retail_qty end
