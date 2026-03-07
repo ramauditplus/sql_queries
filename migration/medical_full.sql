@@ -1258,7 +1258,6 @@ from a
 where b.id = any (a.ids);
 --##
 -- alter table batch rename column category1_id to section_id;
-alter table batch alter column batch_no set not null;
 -- uuid related changes
 select now() as time, 'UUID_CHANGES FOR BATCH STARTS' as msg;
 ALTER TABLE batch ADD COLUMN IF NOT EXISTS vendor_uuid uuid;
@@ -2750,7 +2749,7 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table unit                    drop if exists changed_at;
     alter table voucher_type            drop if exists changed_at;
     alter table warehouse               drop if exists changed_at;
-    alter table pos_counter             drop if exists changed_at;
+    alter table udm_pos_counter         drop if exists changed_at;
     alter table udm_doctor                  drop if exists changed_at;
     alter table udm_drug_classification     drop if exists changed_at;
 --DROP OR MODIFY TABLE--
@@ -3120,7 +3119,7 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         alter table batch drop column if exists warehouse_id;
         alter table batch rename column warehouse_uuid to warehouse_id;
         alter table batch alter column warehouse_id set not null;
-        alter table batch drop column if exists id;
+--         alter table batch drop column if exists id;
         --
         alter table inv_txn drop column if exists warehouse_id;
         alter table inv_txn rename column warehouse_uuid to warehouse_id;
