@@ -152,6 +152,8 @@ drop table if exists doctor;
 drop table if exists drug_classification;
 drop table if exists inventory_composition;
 --
+alter table pos_counter rename to udm_pos_counter;
+--
 alter table organization
     add if not exists created_by uuid,
     add if not exists updated_by uuid;
@@ -833,11 +835,11 @@ select now() as time, 'UUID_CHANGES FOR BRANCH ENDS' as msg;
 
 ---------------------------------------------------------------------------
 --## POS_COUNTER
-select now() as time, 'UUID_CHANGES FOR POS_COUNTER STARTS' as msg;
-ALTER TABLE pos_counter ADD COLUMN IF NOT EXISTS branch_uuid uuid;
+select now() as time, 'UUID_CHANGES FOR UDM_POS_COUNTER STARTS' as msg;
+ALTER TABLE udm_pos_counter ADD COLUMN IF NOT EXISTS branch_uuid uuid;
 ------------------
-    UPDATE pos_counter b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
-select now() as time, 'UUID_CHANGES FOR POS_COUNTER ENDS' as msg;
+    UPDATE udm_pos_counter b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
+select now() as time, 'UUID_CHANGES FOR UDM_POS_COUNTER ENDS' as msg;
 --## POS_COUNTER
 ---------------------------------------------------------------------------
 
@@ -2985,9 +2987,9 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         alter table voucher rename column branch_uuid to branch_id;
         alter table voucher alter column branch_id set not null;
         --
-        alter table pos_counter drop column if exists branch_id;
-        alter table pos_counter rename column branch_uuid to branch_id;
-        alter table pos_counter alter column branch_id set not null;
+        alter table udm_pos_counter drop column if exists branch_id;
+        alter table udm_pos_counter rename column branch_uuid to branch_id;
+        alter table udm_pos_counter alter column branch_id set not null;
 -- GST_REGISTRATION
     alter table gst_registration drop column if exists id;
     alter table gst_registration rename column uuid_id to id;
