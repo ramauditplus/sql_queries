@@ -2597,14 +2597,14 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
     alter table udm_pos_session drop column if exists id;
     alter table udm_pos_session rename column uuid_id to id;
     alter table udm_pos_session alter column id set not null;
-    alter table udm_pos_session add constraint udm_pos_session primary key (id);
+    alter table udm_pos_session add constraint udm_pos_session_pkey primary key (id);
         --
         alter table voucher drop column if exists pos_counter_session_id;
 -- UDM_POS_COUNTER_SETTLEMENT
     alter table udm_pos_counter_settlement drop column if exists id;
     alter table udm_pos_counter_settlement rename column uuid_id to id;
     alter table udm_pos_counter_settlement alter column id set not null;
-    alter table udm_pos_counter_settlement add constraint udm_pos_counter_settlement primary key (id);
+    alter table udm_pos_counter_settlement add constraint udm_pos_counter_settlement_pkey primary key (id);
         --
         alter table voucher drop column if exists pos_counter_settlement_id;
         --
