@@ -144,11 +144,18 @@ END $$;
 --##
 alter table organization
     add if not exists created_by uuid,
-    add if not exists updated_by uuid;
+    add if not exists updated_by uuid,
+    add if not exists email_config jsonb;
 --##
 alter table organization
     alter column configuration type jsonb using configuration::jsonb,
     alter column license_claims type jsonb using license_claims::jsonb;
+--##
+UPDATE organization
+SET email_config = configuration -> 'email_config',
+    configuration = configuration - 'email_config'
+WHERE configuration IS NOT NULL
+  AND configuration ? 'email_config';
 --##
 drop table if exists permission;
 --##
@@ -556,6 +563,9 @@ VALUES
 ('019549da-5400-703a-8000-000000000000', 'Vijaya Bank', 'VIJB', 'VIJAYA', NULL),
 ('01954f00-b000-703b-8000-000000000000', 'Punjab National Bank', 'PUNB', 'PUNB', NULL);
 --##
+alter table bank add unique (code);
+alter table bank add unique (name);
+--##
 drop table if exists bank_beneficiary;
 --##
 create table bank_beneficiary
@@ -770,6 +780,10 @@ drop table if exists drug_classification;
 drop table if exists inventory_composition;
 --
 alter table pos_counter rename to udm_pos_counter;
+alter table pos_counter_session rename to udm_pos_session;
+    ALTER TABLE udm_pos_session  ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
+alter table pos_counter_settlement rename to udm_pos_counter_settlement;
+    ALTER TABLE udm_pos_counter_settlement  ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
 --
 
 --
@@ -786,6 +800,10 @@ alter table pos_counter rename to udm_pos_counter;
 --     rename constraint inventory_composition_pkey to udm_inventory_composition_pkey;
 alter table udm_pos_counter
     rename constraint pos_counter_pkey to udm_pos_counter_pkey;
+alter table udm_pos_session
+    rename constraint pos_counter_session_pkey to udm_pos_session_pkey;
+alter table udm_pos_counter_settlement
+    rename constraint pos_counter_settlement_pkey to udm_pos_counter_settlement_pkey;
 --## f_key
 
 ------------------------------------------------------------------------
@@ -838,6 +856,10 @@ alter table udm_pos_counter
     ALTER TABLE warehouse ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE udm_pos_counter ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE udm_pos_counter ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
+    ALTER TABLE udm_pos_session ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
+    ALTER TABLE udm_pos_session ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
+    ALTER TABLE udm_pos_counter_settlement ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
+    ALTER TABLE udm_pos_counter_settlement ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
 --     ALTER TABLE udm_doctor ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
 --     ALTER TABLE udm_doctor ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
 --     ALTER TABLE udm_drug_classification ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
@@ -871,8 +893,6 @@ update account SET code = id;
 alter table account alter column code SET NOT NULL;
 alter table account alter column e_banking_info type jsonb using e_banking_info::jsonb;
 -- Account uuid related changes
-ALTER TABLE account ADD COLUMN IF NOT EXISTS bank_id uuid;
-ALTER TABLE account ADD COLUMN IF NOT EXISTS bank_beneficiary_id uuid;
 ALTER TABLE account ADD COLUMN IF NOT EXISTS tds_nature_of_payment_uuid uuid;
 ------------------
     UPDATE account b SET account_type_uuid = a.uuid_id FROM account_type a WHERE a.id = b.account_type_id;
@@ -894,13 +914,13 @@ select now() as time, 'UUID_CHANGES FOR BRANCH ENDS' as msg;
 ---------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------
---## POS_COUNTER
+--## UDM_POS_COUNTER
 select now() as time, 'UUID_CHANGES FOR UDM_POS_COUNTER STARTS' as msg;
 ALTER TABLE udm_pos_counter ADD COLUMN IF NOT EXISTS branch_uuid uuid;
 ------------------
     UPDATE udm_pos_counter b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
 select now() as time, 'UUID_CHANGES FOR UDM_POS_COUNTER ENDS' as msg;
---## POS_COUNTER
+--## UDM_POS_COUNTER
 ---------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------
@@ -1061,6 +1081,17 @@ ALTER TABLE tds_on_voucher ADD COLUMN IF NOT EXISTS voucher_uuid uuid;
     UPDATE tds_on_voucher b SET voucher_uuid = a.uuid_id FROM voucher a WHERE a.id = b.voucher_id;
 select now() as time, 'UUID_CHANGES FOR TDS_ON_VOUCHER ENDS' as msg;
 --## TDS_ON_VOUCHER
+---------------------------------------------------------------------------
+
+---------------------------------------------------------------------------
+--## UDM_POS_SESSION
+select now() as time, 'uuid_changes for udm_pos_session starts' as msg;
+alter table udm_pos_session add column if not exists settlement_uuid uuid;
+------------------
+    update udm_pos_session b set settlement_uuid = a.uuid_id from udm_pos_counter_settlement a where a.id = b.settlement_id;
+    alter table udm_pos_session alter column cash_denomination type jsonb using cash_denomination::jsonb;
+select now() as time, 'uuid_changes for udm_pos_session ends' as msg;
+--## UDM_POS_SESSION
 ---------------------------------------------------------------------------
 
 /*
@@ -1354,8 +1385,22 @@ alter table voucher
     add if not exists udf_transfer_voucher_id      uuid,
     add if not exists udf_approved                 bool,
     add if not exists branch_uuid                  uuid,
-    add if not exists voucher_type_uuid            uuid;
+    add if not exists voucher_type_uuid            uuid,
+    add if not exists udf_pos_counter_session_id   uuid,
+    add if not exists udf_pos_counter_settlement_id uuid;
 --     add if not exists udf_doctor_id                uuid;
+--##
+alter table voucher rename pos_counter_code to udf_pos_counter_code;
+--##
+UPDATE voucher v
+set udf_pos_counter_session_id = b.uuid_id
+from udm_pos_session b
+where v.pos_counter_session_id = b.id;
+--##
+UPDATE voucher v
+set udf_pos_counter_settlement_id = b.uuid_id
+from udm_pos_counter_settlement b
+where v.pos_counter_settlement_id = b.id;
 --##
 UPDATE voucher v
 SET branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
@@ -1983,6 +2028,7 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table inv_txn drop column if exists manufacturer_name;
     alter table inv_txn drop column if exists is_opening;
     alter table inv_txn drop column if exists inventory_voucher_id;
+    alter table inv_txn drop column if exists category1_id;
     alter table inv_txn drop column if exists category1_name;
     alter table inv_txn drop column if exists category2_id;
     alter table inv_txn drop column if exists category2_name;
@@ -2020,9 +2066,6 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table account drop column if exists is_commission_discounted;
     alter table account drop column if exists commission;
     alter table account drop column if exists aadhar_no;
-    alter table account drop column if exists alternate_mobile;
-    alter table account drop column if exists telephone;
-    alter table account drop column if exists contact_person;
     alter table account drop column if exists category1;
     alter table account drop column if exists category2;
     alter table account drop column if exists category3;
@@ -2052,7 +2095,6 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table bank_txn drop column if exists epayment_status;
     alter table bank_txn drop column if exists bank_ref_no;
     alter table bank_txn drop column if exists bank_particulars;
-    alter table bank_txn drop column if exists emailed;
 -- BATCH --
     alter table batch alter column p_rate drop expression;
     alter table batch alter column closing drop expression;
@@ -2082,6 +2124,7 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
 -- BILL_ALLOCATION --
     alter table bill_allocation drop column if exists base_account_types;
 --     alter table bill_allocation drop column if exists pending;
+    alter table bill_allocation drop column if exists old_ref_no;
     alter table bill_allocation drop column if exists is_approved;
     alter table bill_allocation drop column if exists due_date;
     alter table bill_allocation drop column if exists account_type_name;
@@ -2142,6 +2185,15 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table tds_on_voucher alter column amount_after_tds_deduction drop expression;
     alter table tds_on_voucher drop column if exists branch_name;
     alter table tds_on_voucher drop column if exists pending_id;
+-- SECTION --
+    alter table section drop column if exists old_id;
+-- UDM_POS_SESSION --
+    alter table udm_pos_session drop column if exists closed_by;
+    alter table udm_pos_session drop column if exists closed_by_id;
+-- UDM_POS_COUNTER_SETTLEMENT --
+    alter table udm_pos_counter_settlement drop column if exists created_by_id;
+    alter table udm_pos_counter_settlement drop column if exists opening;
+    alter table udm_pos_counter_settlement drop column if exists closing;
 -- changed_at removal --
     alter table account                 drop if exists changed_at;
     alter table account_type            drop if exists changed_at;
@@ -2328,16 +2380,19 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         alter table bill_allocation rename column account_type_uuid to account_type_id;
         alter table bill_allocation alter column account_type_id set not null;
         --
+        alter table account drop column if exists bank_id;
+        alter table account add column if not exists bank_id uuid;
+        --
         alter table account drop column if exists bank_beneficiary_id;
         alter table account add column if not exists bank_beneficiary_id uuid;
 -- BRANCH
-    alter table branch alter column members drop not null;
     alter table branch drop column if exists id;
     alter table branch rename column uuid_id to id;
     alter table branch alter column id set not null;
     ALTER TABLE branch ADD CONSTRAINT branch_pkey PRIMARY KEY (id);
     alter table branch alter column misc type jsonb using misc::jsonb;
     alter table branch alter column configuration type jsonb using configuration::jsonb;
+    alter table branch alter column members drop not null;
         --
         alter table ac_txn drop column if exists branch_id;
         alter table ac_txn rename column branch_uuid to branch_id;
@@ -2538,7 +2593,23 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
     alter table print_template rename column uuid_id to id;
     alter table print_template alter column id set not null;
     ALTER TABLE print_template ADD CONSTRAINT print_template_pkey PRIMARY KEY (id);
-    --
+-- UDM_POS_SESSION
+    alter table udm_pos_session drop column if exists id;
+    alter table udm_pos_session rename column uuid_id to id;
+    alter table udm_pos_session alter column id set not null;
+    alter table udm_pos_session add constraint udm_pos_session primary key (id);
+        --
+        alter table voucher drop column if exists pos_counter_session_id;
+-- UDM_POS_COUNTER_SETTLEMENT
+    alter table udm_pos_counter_settlement drop column if exists id;
+    alter table udm_pos_counter_settlement rename column uuid_id to id;
+    alter table udm_pos_counter_settlement alter column id set not null;
+    alter table udm_pos_counter_settlement add constraint udm_pos_counter_settlement primary key (id);
+        --
+        alter table voucher drop column if exists pos_counter_settlement_id;
+        --
+        alter table udm_pos_session drop column if exists settlement_id;
+        alter table udm_pos_session rename column settlement_uuid to settlement_id;
 -- UDM_DOCTOR
     -- alter table udm_doctor drop column if exists id;
     -- alter table udm_doctor rename column uuid_id to id;
@@ -2560,7 +2631,7 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         --
         -- alter table inventory drop column if exists udf_compositions;
         -- alter table inventory rename column udf_compositions_uuid to udf_compositions;
-    --
+
 select now() as time, 'RENAMING AND DROPPING UUID COLUMN END' as msg;
 -------------------------------------------------------------------------------------------------
 ---- INDEX RESTORE
@@ -2574,16 +2645,20 @@ select now() as time, 'ADDING REQUIRED INDEX START' as msg;
 --## account
     create index on account (val_name);
     create index on account (transaction_enabled);
+    create index on account (mobile);
 --## bank_txn
     create index on bank_txn (date);
+    drop index if exists bank_txn_ac_txn_id;
     create index on bank_txn (ac_txn_id);
     create index on bank_txn (account_id);
     create index on bank_txn (voucher_id);
 --## batch
+    drop index if exists batch_barcode;
     create index on batch (barcode);
     create index on batch (inventory_id, branch_id, warehouse_id);
 --## bill_allocation
     create index on bill_allocation (eff_date);
+    drop index if exists bill_allocation_ac_txn_id;
     create index on bill_allocation (ac_txn_id);
     create index on bill_allocation (account_id);
     create index on bill_allocation (voucher_id);
