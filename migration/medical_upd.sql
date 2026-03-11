@@ -784,6 +784,8 @@ alter table udm_drug_classification
     rename constraint drug_classification_pkey to udm_drug_classification_pkey;
 alter table udm_inventory_composition
     rename constraint inventory_composition_pkey to udm_inventory_composition_pkey;
+alter table udm_pos_counter
+    rename constraint pos_counter_pkey to udm_pos_counter_pkey;
 --## f_key
 
 ------------------------------------------------------------------------
