@@ -255,12 +255,18 @@ values
     ('gstr_2b_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     ('gstr_2b_reconcile', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     ('gstr_2b_upload', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
-    --section
-    ('section_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
-    ('section_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
-    ('section_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
-    ('section_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
-    ('section_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    --category
+    ('category_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('category_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('category_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('category_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('category_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    --sub_category
+    ('sub_category_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('sub_category_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('sub_category_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('sub_category_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('sub_category_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --inventory
     ('inventory_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     ('inventory_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
@@ -384,8 +390,10 @@ values
     ('wanted_item_status', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now());
 --## PERMISSION
 
---## SECTION
-create table if not exists section
+--## CATEGORY
+drop table if exists category;
+--##
+create table if not exists category
 (
     id         uuid       not null primary key,
     old_id     int,
@@ -396,10 +404,29 @@ create table if not exists section
     updated_at timestamp  not null
 );
 --##
-INSERT INTO section
+INSERT INTO category
 SELECT uuidv7(), id, name, '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', created_at, updated_at
-FROM category_option;
---## SECTION
+FROM category_option
+where category_id = 'INV_CAT1';
+--## CATEGORY
+
+--## SUB_CATEGORY
+create table if not exists sub_category
+(
+    id         uuid       not null primary key,
+    old_id     int,
+    name       text       not null,
+    created_by uuid       not null,
+    updated_by uuid       not null,
+    created_at timestamp  not null,
+    updated_at timestamp  not null
+);
+--##
+INSERT INTO sub_category
+SELECT uuidv7(), id, name, '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', created_at, updated_at
+FROM category_option
+where category_id = 'INV_CAT2';
+--## SUB_CATEGORY
 
 --## UNIT AND UNIT_CONVERSION
 drop table if exists unit;
@@ -965,7 +992,8 @@ select now() as time, 'UUID_CHANGES FOR BANK_TXN ENDS' as msg;
 select now() as time, 'UUID_CHANGES FOR INVENTORY STARTS' as msg;
 -- inventory field related changes
 alter table inventory
-    add if not exists section_id  uuid,
+    add if not exists category_id  uuid,
+    add if not exists sub_category_id  uuid,
     add if not exists cess_qty    float,
     add if not exists cess_value  float;
 alter table inventory rename column compositions to udf_compositions;
@@ -991,7 +1019,8 @@ ALTER TABLE inventory ADD COLUMN IF NOT EXISTS udf_compositions_uuid uuid[];
     UPDATE inventory b SET purchase_account_uuid = a.uuid_id FROM account a WHERE a.id = b.purchase_account_id and a.transaction_enabled;
     UPDATE inventory b SET manufacturer_uuid = a.uuid_id FROM manufacturer a WHERE a.id = b.manufacturer_id;
     UPDATE inventory b SET division_uuid = a.uuid_id FROM division a WHERE a.id = b.division_id;
-    UPDATE inventory b SET section_id = a.id FROM section a WHERE a.old_id = b.category1_id;
+    UPDATE inventory b SET category_id = a.id FROM category a WHERE a.old_id = b.category1_id;
+    UPDATE inventory b SET sub_category_id = a.id FROM sub_category a WHERE a.old_id = b.category2_id;
     UPDATE inventory b
     SET unit_uuid          = (select id from unit where symbol = '1'),
         sale_unit_uuid     = (select id from unit where symbol = '1'),
@@ -1041,13 +1070,11 @@ ALTER TABLE inventory_branch_detail ADD COLUMN IF NOT EXISTS preferred_vendor_uu
 ALTER TABLE inventory_branch_detail ADD COLUMN IF NOT EXISTS last_vendor_uuid uuid;
 ALTER TABLE inventory_branch_detail ADD COLUMN IF NOT EXISTS branch_uuid uuid;
 ALTER TABLE inventory_branch_detail ADD COLUMN IF NOT EXISTS inventory_uuid uuid;
-ALTER TABLE inventory_branch_detail ADD COLUMN IF NOT EXISTS division_uuid uuid;
 ------------------
     UPDATE inventory_branch_detail b SET preferred_vendor_uuid = a.uuid_id FROM account a WHERE a.id = b.preferred_vendor_id;
     UPDATE inventory_branch_detail b SET last_vendor_uuid = a.uuid_id FROM account a WHERE a.id = b.last_vendor_id;
     UPDATE inventory_branch_detail b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
     UPDATE inventory_branch_detail b SET inventory_uuid = a.uuid_id FROM inventory a WHERE a.id = b.inventory_id;
-    UPDATE inventory_branch_detail b SET division_uuid = a.uuid_id FROM division a WHERE a.id = b.division_id;
 select now() as time, 'UUID_CHANGES FOR INVENTORY_BRANCH_DETAIL ENDS' as msg;
 --## INVENTORY_BRANCH_DETAIL
 ---------------------------------------------------------------------------
@@ -1301,7 +1328,8 @@ select now() as time, 'general_migration_end' as msg;
 
 --## BATCH
 -- field related changes
-alter table batch drop column if exists section_id;
+alter table batch drop column if exists category_id;
+alter table batch drop column if exists sub_category_id;
 alter table batch drop column if exists manufacturer_id;
 --
 update batch
@@ -1325,7 +1353,8 @@ ALTER TABLE batch ADD COLUMN IF NOT EXISTS vendor_uuid uuid;
 ALTER TABLE batch ADD COLUMN IF NOT EXISTS branch_uuid uuid;
 ALTER TABLE batch ADD COLUMN IF NOT EXISTS inventory_uuid uuid;
 ALTER TABLE batch ADD COLUMN IF NOT EXISTS manufacturer_id uuid;
-ALTER TABLE batch ADD COLUMN IF NOT EXISTS section_id uuid;
+ALTER TABLE batch ADD COLUMN IF NOT EXISTS category_id uuid;
+ALTER TABLE batch ADD COLUMN IF NOT EXISTS sub_category_id uuid;
 ALTER TABLE batch ADD COLUMN IF NOT EXISTS unit_uuid uuid;
 ALTER TABLE batch ADD COLUMN IF NOT EXISTS voucher_uuid uuid;
 ALTER TABLE batch ADD COLUMN IF NOT EXISTS warehouse_uuid uuid;
@@ -1346,7 +1375,8 @@ select now() as time, 'UUID_CHANGES FOR BATCH inv_id, sec_id, manu_id STARTS' as
 create index on batch (inventory_id);
 UPDATE batch b
     SET inventory_uuid = a.uuid_id,
-        section_id = a.section_id,
+        category_id = a.category_id,
+        sub_category_id = a.sub_category_id,
         manufacturer_id = a.manufacturer_id,
         inv_retail_qty = a.retail_qty
     FROM inventory a WHERE a.id = b.inventory_id;
@@ -1693,7 +1723,8 @@ select now() as time, 'UUID_CHANGES FOR AC_TXN BRANCH_ID ENDS' as msg;
 --## INV_TXN
 select now() as time, 'UUID_CHANGES FOR INV_TXN STARTS' as msg;
 -- inv_txn field related changes
-alter table inv_txn drop column if exists section_id;
+alter table inv_txn drop column if exists category_id;
+alter table inv_txn drop column if exists sub_category_id;
 alter table inv_txn drop column if exists manufacturer_id;
 --
 alter table inv_txn
@@ -1730,7 +1761,8 @@ alter table inv_txn
     add if not exists voucher_uuid             uuid,
     add if not exists voucher_type_uuid        uuid,
     add if not exists warehouse_uuid           uuid,
-    add if not exists section_id               uuid,
+    add if not exists category_id              uuid,
+    add if not exists sub_category_id          uuid,
     add if not exists manufacturer_id          uuid,
     add if not exists free_qty                 float,
     add if not exists vendor_uuid              uuid,
@@ -1753,8 +1785,9 @@ set sno                 = i.sno,
     cess_on_val         = i.cess_on_val,
     batch_no            = b.batch_no,
     vendor_uuid         = b.vendor_uuid,
-    inventory_uuid        = b.inventory_uuid,
-    section_id          = b.section_id,
+    inventory_uuid      = b.inventory_uuid,
+    category_id         = b.category_id,
+    sub_category_id     = b.sub_category_id,
     manufacturer_id     = b.manufacturer_id
 from credit_note_inv_item i
          left join batch b on b.id = i.batch_id
@@ -1791,7 +1824,8 @@ set sno                 = i.sno,
     batch_no            = b.batch_no,
     inventory_uuid      = b.inventory_uuid,
     vendor_uuid         = b.vendor_uuid,
-    section_id          = b.section_id,
+    category_id         = b.category_id,
+    sub_category_id     = b.sub_category_id,
     manufacturer_id     = b.manufacturer_id
 from debit_note_inv_item i
          left join batch b on b.id = i.batch_id
@@ -1813,7 +1847,8 @@ set sno               = i.sno,
     batch_no          = b.batch_no,
     vendor_uuid       = b.vendor_uuid,
     inventory_uuid    = b.inventory_uuid,
-    section_id        = b.section_id,
+    category_id       = b.category_id,
+    sub_category_id   = b.sub_category_id,
     manufacturer_id   = b.manufacturer_id
 from personal_use_purchase_inv_item i
          left join batch b on b.id = i.batch_id
@@ -1837,18 +1872,19 @@ set sno              = i.sno,
     hsn_code         = i.hsn_code,
     cess_on_qty      = i.cess_on_qty,
     cess_on_val      = i.cess_on_val,
-    inventory_uuid     = b.inventory_uuid,
-    section_id       = b.section_id,
+    inventory_uuid   = b.inventory_uuid,
+    category_id      = b.category_id,
+    sub_category_id  = b.sub_category_id,
     manufacturer_id  = b.manufacturer_id,
     free_qty         = i.free_qty,
     batch_no         = b.batch_no,
     vendor_uuid      = b.vendor_uuid,
-    s_rate       = b.s_rate,
-    mrp          = b.mrp,
-    expiry       = b.expiry,
-    nlc          = b.nlc,
-    landing_cost = b.landing_cost,
-    cost         = b.cost
+    s_rate           = b.s_rate,
+    mrp              = b.mrp,
+    expiry           = b.expiry,
+    nlc              = b.nlc,
+    landing_cost     = b.landing_cost,
+    cost             = b.cost
 from purchase_bill_inv_item i
     left join batch b on b.txn_id = i.id
     left join unit_conversion uc on uc.conversion = case when i.is_retail_qty then 1 else b.inv_retail_qty end
@@ -1873,7 +1909,8 @@ set sno                      = i.sno,
     batch_no                 = b.batch_no,
     vendor_uuid              = b.vendor_uuid,
     inventory_uuid           = b.inventory_uuid,
-    section_id               = b.section_id,
+    category_id              = b.category_id,
+    sub_category_id          = b.sub_category_id,
     manufacturer_id          = b.manufacturer_id
 from sale_bill_inv_item i
     left join batch b on b.id = i.batch_id
@@ -1923,14 +1960,15 @@ set sno               = i.sno,
     asset_amount      = i.asset_amount,
     batch_no          = b.batch_no,
     vendor_uuid       = b.vendor_uuid,
-    s_rate       = b.s_rate,
-    mrp          = b.mrp,
-    expiry       = b.expiry,
-    nlc          = b.nlc,
-    landing_cost = b.landing_cost,
-    cost         = b.cost,
-    section_id        = b.section_id,
-    inventory_uuid      = b.inventory_uuid,
+    s_rate            = b.s_rate,
+    mrp               = b.mrp,
+    expiry            = b.expiry,
+    nlc               = b.nlc,
+    landing_cost      = b.landing_cost,
+    cost              = b.cost,
+    category_id       = b.category_id,
+    sub_category_id   = b.sub_category_id,
+    inventory_uuid    = b.inventory_uuid,
     manufacturer_id   = b.manufacturer_id
 from stock_journal_inv_item i
          left join batch b on b.id = i.batch_id or b.txn_id = i.id
@@ -1949,14 +1987,15 @@ set sno               = i.sno,
     asset_amount      = i.asset_amount,
     batch_no          = b.batch_no,
     vendor_uuid       = b.vendor_uuid,
-    s_rate       = b.s_rate,
-    mrp          = b.mrp,
-    expiry       = b.expiry,
-    nlc          = b.nlc,
-    landing_cost = b.landing_cost,
-    cost         = b.cost,
-    inventory_uuid      = b.inventory_uuid,
-    section_id        = b.section_id,
+    s_rate            = b.s_rate,
+    mrp               = b.mrp,
+    expiry            = b.expiry,
+    nlc               = b.nlc,
+    landing_cost      = b.landing_cost,
+    cost              = b.cost,
+    inventory_uuid    = b.inventory_uuid,
+    category_id       = b.category_id,
+    sub_category_id   = b.sub_category_id,
     manufacturer_id   = b.manufacturer_id
 from inventory_opening i
          left join batch b on b.txn_id = i.id
@@ -2198,6 +2237,7 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table inventory_branch_detail drop column if exists s_disc;
     alter table inventory_branch_detail drop column if exists discount_1;
     alter table inventory_branch_detail drop column if exists discount_2;
+    alter table inventory_branch_detail drop column if exists division_id;
     alter table inventory_branch_detail drop column if exists preferred_vendor_name;
     alter table inventory_branch_detail drop column if exists last_vendor_name;
     alter table inventory_branch_detail drop column if exists s_customer_disc;
@@ -2217,8 +2257,10 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table tds_on_voucher alter column amount_after_tds_deduction drop expression;
     alter table tds_on_voucher drop column if exists branch_name;
     alter table tds_on_voucher drop column if exists pending_id;
--- SECTION --
-    alter table section drop column if exists old_id;
+-- CATEGORY --
+    alter table category drop column if exists old_id;
+-- SUB_CATEGORY --
+    alter table sub_category drop column if exists old_id;
 -- UDM_POS_SESSION --
     alter table udm_pos_session drop column if exists closed_by;
     alter table udm_pos_session drop column if exists closed_by_id;
@@ -2256,7 +2298,6 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     drop table if exists dispatch_address;
     drop table if exists area;
     drop table if exists bill_of_material_component;
-    drop table if exists category;
     drop table if exists category_option;
     drop table if exists credit_note;
     drop table if exists credit_note_inv_item;
@@ -2483,10 +2524,6 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         alter table inv_txn drop column if exists division_id;
         alter table inv_txn rename column division_uuid to division_id;
         alter table inv_txn alter column division_id set not null;
-        --
-        alter table inventory_branch_detail drop column if exists division_id;
-        alter table inventory_branch_detail rename column division_uuid to division_id;
-        alter table inventory_branch_detail alter column division_id set not null;
         --
         alter table inventory drop column if exists division_id;
         alter table inventory rename column division_uuid to division_id;
