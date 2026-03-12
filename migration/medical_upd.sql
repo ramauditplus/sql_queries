@@ -145,7 +145,8 @@ END $$;
 alter table organization
     add if not exists created_by uuid,
     add if not exists updated_by uuid,
-    add if not exists email_config jsonb;
+    add if not exists email_config jsonb,
+    add if not exists udf_wanted_item_config jsonb;
 --##
 alter table organization
     alter column configuration type jsonb using configuration::jsonb,
@@ -156,6 +157,12 @@ SET email_config = configuration -> 'email_config',
     configuration = configuration - 'email_config'
 WHERE configuration IS NOT NULL
   AND configuration ? 'email_config';
+--##
+UPDATE organization
+SET udf_wanted_item_config = configuration -> 'wanted_note_config',
+    configuration = configuration - 'wanted_note_config'
+WHERE configuration IS NOT NULL
+  AND configuration ? 'wanted_note_config';
 --##
 drop table if exists permission;
 --##
