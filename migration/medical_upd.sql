@@ -2311,7 +2311,7 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     drop table if exists dispatch_address;
     drop table if exists area;
     drop table if exists bill_of_material_component;
-    drop table if exists category_option;
+--     drop table if exists category_option;
     drop table if exists credit_note;
     drop table if exists credit_note_inv_item;
     drop table if exists customer_advance;
