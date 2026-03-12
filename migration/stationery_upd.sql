@@ -142,6 +142,8 @@ BEGIN
     END LOOP;
 END $$;
 --##
+
+--## ORGANIZATION
 alter table organization
     add if not exists created_by uuid,
     add if not exists updated_by uuid,
@@ -163,7 +165,29 @@ WHERE configuration IS NOT NULL
 --    configuration = configuration - 'wanted_note_config'
 -- WHERE configuration IS NOT NULL
 --  AND configuration ? 'wanted_note_config';
+--## ORGANIZATION
+
+--## GSTR_2B
+drop table if exists gstr_2b;
 --##
+create table gstr_2b
+(
+    ctin       text             not null,
+    trdnm      text             not null,
+    inum       text             not null,
+    dt         date             not null,
+    val        double precision not null,
+    txval      double precision not null,
+    igst       double precision not null,
+    cgst       double precision not null,
+    sgst       double precision not null,
+    cess       double precision not null,
+    created_at timestamp        not null,
+    created_by uuid             not null
+);
+--## GSTR_2B
+
+--## PERMISSION
 drop table if exists permission;
 --##
 create table if not exists permission
@@ -358,7 +382,7 @@ values
     -- wanted_item_config
     -- ('wanted_item_configuration', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     -- ('wanted_item_status', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now());
---##
+--## PERMISSION
 
 --## SECTION
 create table if not exists section
@@ -1182,24 +1206,6 @@ ALTER TABLE voucher_numbering ADD COLUMN IF NOT EXISTS branch_uuid uuid;
     UPDATE voucher_numbering b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
 select now() as time, 'UUID_CHANGES FOR VOUCHER_NUMBERING ENDS' as msg;
 --## VOUCHER_NUMBERING
----------------------------------------------------------------------------
-
----------------------------------------------------------------------------
---## GSTR_2B
-select now() as time, 'column rename FOR gstr_2b STARTS' as msg;
-alter table if exists gstr_2b drop column IF EXISTS id;
-alter table if exists gstr_2b rename column gst_no to ctin;
-alter table if exists gstr_2b rename column supplier_name to trdnm;
-alter table if exists gstr_2b rename column invoice_no to inum;
-alter table if exists gstr_2b rename column invoice_date to dt;
-alter table if exists gstr_2b rename column total_invoice_value to val;
-alter table if exists gstr_2b rename column total_taxable_amount to txval;
-alter table if exists gstr_2b rename column integrated_tax_amount to igst;
-alter table if exists gstr_2b rename column central_tax_amount to cgst;
-alter table if exists gstr_2b rename column state_tax_amount to sgst;
-alter table if exists gstr_2b rename column cess_amount to cess;
-select now() as time, 'column rename FOR gstr_2b ENDS' as msg;
---## GSTR_2B
 ---------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------
