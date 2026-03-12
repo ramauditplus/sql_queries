@@ -1450,6 +1450,8 @@ alter table voucher
     add if not exists voucher_type_uuid            uuid,
     add if not exists udf_pos_counter_session_id   uuid,
     add if not exists udf_pos_counter_settlement_id uuid;
+--     add if not exists udf_customer_mobile          text,
+--     add if not exists udf_reminder_date            date,
 --     add if not exists udf_doctor_id                uuid;
 --##
 alter table voucher rename pos_counter_code to udf_pos_counter_code;
@@ -1601,6 +1603,8 @@ SET branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
     sales_person_id        = sp.uuid_id,
     branch_uuid            = br.uuid_id,
     voucher_type_uuid      = vt.uuid_id
+--     udf_customer_mobile    = a.mobile,
+--     udf_reminder_date      = b.date + b.reminder_days,
 --     udf_doctor_id          = ud.uuid_id
 FROM sale_bill b
     LEFT JOIN warehouse w     ON w.id = b.warehouse_id
@@ -1767,7 +1771,16 @@ alter table inv_txn
     add if not exists free_qty                 float,
     add if not exists vendor_uuid              uuid,
     add if not exists division_uuid            uuid;
+--     add if not exists udf_reminder_date        date,
 --     add if not exists udf_drug_classifications uuid[];
+--##
+--select now() as time, 'inv_txn set udf_reminder_date from sale_bill STARTS' as msg;
+--update inv_txn t
+--set udf_reminder_date = i.date + i.reminder_days
+--from sale_bill i
+--    where i.voucher_id = t.voucher_id
+--    and i.reminder_days is not null;
+--select now() as time, 'inv_txn set udf_reminder_date from sale_bill ENDS' as msg;
 --##
 select now() as time, 'inv_txn set data from credit_note_inv_item STARTS' as msg;
 update inv_txn t
