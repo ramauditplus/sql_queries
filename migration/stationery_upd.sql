@@ -651,6 +651,8 @@ create table bill_of_material
 --##
 ALTER TABLE member ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
 --##
+ALTER TABLE division ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
+--##
 UPDATE member SET uuid_id = '01941f29-7c00-7000-8000-000000000000' WHERE id = 1;
 --##
 select now() as time, 'SETTING UUID AS COLUMN STARTS' as msg;
@@ -858,6 +860,8 @@ alter table udm_pos_counter_settlement
     ALTER TABLE bill_allocation ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE branch ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE branch ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
+    ALTER TABLE division ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
+    ALTER TABLE division ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE financial_year ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE financial_year ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE gst_registration ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
@@ -937,18 +941,6 @@ select now() as time, 'CHANGES FOR ACCOUNT ENDS' as msg;
 ---------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------
---## BRANCH
-select now() as time, 'UUID_CHANGES FOR BRANCH STARTS' as msg;
-ALTER TABLE branch ADD COLUMN IF NOT EXISTS account_uuid uuid;
-ALTER TABLE branch ADD COLUMN IF NOT EXISTS gst_registration_uuid uuid;
-------------------
-    UPDATE branch b SET account_uuid = a.uuid_id FROM account a WHERE a.id = b.account_id;
-    UPDATE branch b SET gst_registration_uuid = a.uuid_id FROM gst_registration a WHERE a.id = b.gst_registration_id;
-select now() as time, 'UUID_CHANGES FOR BRANCH ENDS' as msg;
---## BRANCH
----------------------------------------------------------------------------
-
----------------------------------------------------------------------------
 --## BANK_TXN
 select now() as time, 'UUID_CHANGES FOR BANK_TXN STARTS' as msg;
 -- bank_txn field related changes
@@ -989,6 +981,7 @@ alter table inventory alter column code set not null;
 ALTER TABLE inventory ADD COLUMN IF NOT EXISTS sale_account_uuid uuid;
 ALTER TABLE inventory ADD COLUMN IF NOT EXISTS purchase_account_uuid uuid;
 ALTER TABLE inventory ADD COLUMN IF NOT EXISTS manufacturer_uuid uuid;
+ALTER TABLE inventory ADD COLUMN IF NOT EXISTS division_uuid uuid;
 ALTER TABLE inventory ADD COLUMN IF NOT EXISTS unit_uuid uuid;
 ALTER TABLE inventory ADD COLUMN IF NOT EXISTS sale_unit_uuid uuid;
 ALTER TABLE inventory ADD COLUMN IF NOT EXISTS purchase_unit_uuid uuid;
@@ -997,6 +990,7 @@ ALTER TABLE inventory ADD COLUMN IF NOT EXISTS purchase_unit_uuid uuid;
     UPDATE inventory b SET sale_account_uuid = a.uuid_id FROM account a WHERE a.id = b.sale_account_id and a.transaction_enabled;
     UPDATE inventory b SET purchase_account_uuid = a.uuid_id FROM account a WHERE a.id = b.purchase_account_id and a.transaction_enabled;
     UPDATE inventory b SET manufacturer_uuid = a.uuid_id FROM manufacturer a WHERE a.id = b.manufacturer_id;
+    UPDATE inventory b SET division_uuid = a.uuid_id FROM division a WHERE a.id = b.division_id;
     UPDATE inventory b SET section_id = a.id FROM section a WHERE a.old_id = b.category1_id;
     UPDATE inventory b
     SET unit_uuid          = (select id from unit where symbol = '1'),
@@ -1047,11 +1041,13 @@ ALTER TABLE inventory_branch_detail ADD COLUMN IF NOT EXISTS preferred_vendor_uu
 ALTER TABLE inventory_branch_detail ADD COLUMN IF NOT EXISTS last_vendor_uuid uuid;
 ALTER TABLE inventory_branch_detail ADD COLUMN IF NOT EXISTS branch_uuid uuid;
 ALTER TABLE inventory_branch_detail ADD COLUMN IF NOT EXISTS inventory_uuid uuid;
+ALTER TABLE inventory_branch_detail ADD COLUMN IF NOT EXISTS division_uuid uuid;
 ------------------
     UPDATE inventory_branch_detail b SET preferred_vendor_uuid = a.uuid_id FROM account a WHERE a.id = b.preferred_vendor_id;
     UPDATE inventory_branch_detail b SET last_vendor_uuid = a.uuid_id FROM account a WHERE a.id = b.last_vendor_id;
     UPDATE inventory_branch_detail b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
     UPDATE inventory_branch_detail b SET inventory_uuid = a.uuid_id FROM inventory a WHERE a.id = b.inventory_id;
+    UPDATE inventory_branch_detail b SET division_uuid = a.uuid_id FROM division a WHERE a.id = b.division_id;
 select now() as time, 'UUID_CHANGES FOR INVENTORY_BRANCH_DETAIL ENDS' as msg;
 --## INVENTORY_BRANCH_DETAIL
 ---------------------------------------------------------------------------
@@ -1333,6 +1329,7 @@ ALTER TABLE batch ADD COLUMN IF NOT EXISTS section_id uuid;
 ALTER TABLE batch ADD COLUMN IF NOT EXISTS unit_uuid uuid;
 ALTER TABLE batch ADD COLUMN IF NOT EXISTS voucher_uuid uuid;
 ALTER TABLE batch ADD COLUMN IF NOT EXISTS warehouse_uuid uuid;
+ALTER TABLE batch ADD COLUMN IF NOT EXISTS division_uuid uuid;
 ALTER TABLE batch ADD COLUMN IF NOT EXISTS inv_retail_qty int;
 --##
 select now() as time, 'UUID_CHANGES FOR BATCH vendor_id STARTS' as msg;
@@ -1378,6 +1375,11 @@ select now() as time, 'UUID_CHANGES FOR BATCH WAREHOUSE_ID STARTS' as msg;
 create index on batch (warehouse_id);
 UPDATE batch b SET warehouse_uuid = a.uuid_id FROM warehouse a WHERE a.id = b.warehouse_id;
 select now() as time, 'UUID_CHANGES FOR BATCH WAREHOUSE_ID ENDS' as msg;
+--##
+select now() as time, 'UUID_CHANGES FOR BATCH DIVISION_ID STARTS' as msg;
+create index on batch (division_id);
+UPDATE batch b SET division_uuid = a.uuid_id FROM division a WHERE a.id = b.division_id;
+select now() as time, 'UUID_CHANGES FOR BATCH DIVISION_ID ENDS' as msg;
 --##
 select now() as time, 'UUID_CHANGES FOR BATCH ENDS' as msg;
 --## BATCH
@@ -1731,7 +1733,8 @@ alter table inv_txn
     add if not exists section_id               uuid,
     add if not exists manufacturer_id          uuid,
     add if not exists free_qty                 float,
-    add if not exists vendor_uuid              uuid;
+    add if not exists vendor_uuid              uuid,
+    add if not exists division_uuid            uuid;
 --     add if not exists udf_drug_classifications uuid[];
 --##
 select now() as time, 'inv_txn set data from credit_note_inv_item STARTS' as msg;
@@ -1985,6 +1988,11 @@ create index on inv_txn (warehouse_id);
 UPDATE inv_txn b SET warehouse_uuid = a.uuid_id FROM warehouse a WHERE a.id = b.warehouse_id;
 select now() as time, 'UUID_CHANGES FOR INV_TXN WAREHOUSE_ID ENDS' as msg;
 ------------------
+select now() as time, 'UUID_CHANGES FOR INV_TXN DIVISION_ID STARTS' as msg;
+create index on inv_txn (division_id);
+UPDATE inv_txn b SET division_uuid = a.uuid_id FROM division a WHERE a.id = b.division_id;
+select now() as time, 'UUID_CHANGES FOR INV_TXN DIVISION_ID ENDS' as msg;
+------------------
 alter table inv_txn alter column batch_no set not null;
 --## INV_TXN
 ---------------------------------------------------------------------------
@@ -2048,8 +2056,6 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table ac_txn drop column if exists inst_no;
     alter table ac_txn drop column if exists base_account_types;
 -- INV_TXN --
-    alter table inv_txn drop column if exists division_id;
-    alter table inv_txn drop column if exists division_name;
     alter table inv_txn drop column if exists party_id;
     alter table inv_txn drop column if exists party_name;
     alter table inv_txn drop column if exists vendor_name;
@@ -2133,8 +2139,6 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table batch drop column if exists inventory_hsn;
     alter table batch drop column if exists branch_name;
     alter table batch drop column if exists warehouse_name;
-    alter table batch drop column if exists division_id;
-    alter table batch drop column if exists division_name;
     alter table batch drop column if exists txn_id;
     alter table batch drop column if exists inventory_voucher_id;
     alter table batch drop column if exists opening_p_rate;
@@ -2162,7 +2166,6 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
 -- INVENTORY --
     alter table inventory alter column val_name drop expression;
     alter table inventory drop column if exists cess;
-    alter table inventory drop column if exists division_id;
     alter table inventory drop column if exists inventory_type;
     alter table inventory drop column if exists retail_qty;
     alter table inventory drop column if exists reorder_inventory_id;
@@ -2201,7 +2204,6 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table inventory_branch_detail drop column if exists p_rate_tax_inc;
     alter table inventory_branch_detail drop column if exists reorder_inventory_id;
     alter table inventory_branch_detail drop column if exists val_name;
-    alter table inventory_branch_detail drop column if exists division_id;
 -- MEMBER --
     alter table member drop column if exists user_id;
     alter table member drop column if exists role_id;
@@ -2230,6 +2232,7 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table batch                   drop if exists changed_at;
     alter table branch                  drop if exists changed_at;
     alter table country                 drop if exists changed_at;
+    alter table division                drop if exists changed_at;
     alter table gst_registration        drop if exists changed_at;
     alter table inventory               drop if exists changed_at;
     alter table inventory_branch_detail drop if exists changed_at;
@@ -2273,7 +2276,6 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     drop table if exists delivery_note_inv_item;
     drop table if exists delivery_receipt;
     drop table if exists display_rack;
-    drop table if exists division;
     drop table if exists e_banking_log;
     drop table if exists eft_reconciliation_voucher;
     drop table if exists environment;
@@ -2468,6 +2470,27 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         -- alter table udm_wanted_item drop column if exists branch_id;
         -- alter table udm_wanted_item rename column branch_uuid to branch_id;
         -- alter table udm_wanted_item alter column branch_id set not null;
+-- DIVISION
+    alter table division drop column if exists id;
+    alter table division rename column uuid_id to id;
+    alter table division alter column id set not null;
+    ALTER TABLE division ADD CONSTRAINT division_pkey PRIMARY KEY (id);
+        --
+        alter table batch drop column if exists division_id;
+        alter table batch rename column division_uuid to division_id;
+        alter table batch alter column division_id set not null;
+        --
+        alter table inv_txn drop column if exists division_id;
+        alter table inv_txn rename column division_uuid to division_id;
+        alter table inv_txn alter column division_id set not null;
+        --
+        alter table inventory_branch_detail drop column if exists division_id;
+        alter table inventory_branch_detail rename column division_uuid to division_id;
+        alter table inventory_branch_detail alter column division_id set not null;
+        --
+        alter table inventory drop column if exists division_id;
+        alter table inventory rename column division_uuid to division_id;
+        alter table inventory alter column division_id set not null;
 -- GST_REGISTRATION
     alter table gst_registration drop column if exists id;
     alter table gst_registration rename column uuid_id to id;
