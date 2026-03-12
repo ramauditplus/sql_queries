@@ -780,6 +780,7 @@ ALTER TABLE tds_nature_of_payment  ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT
 --## MODIFY_TABLE
 alter table vendor_bill_map rename to udm_vendor_bill_map;
 alter table vendor_item_map rename to udm_vendor_item_map;
+alter table wanted_note rename to udm_wanted_item;
 --
 -- drop table if exists doctor;
 alter table doctor rename to udm_doctor;
@@ -791,9 +792,7 @@ alter table if exists inventory_composition rename to udm_inventory_composition;
 --
 alter table pos_counter rename to udm_pos_counter;
 alter table pos_counter_session rename to udm_pos_session;
-    ALTER TABLE udm_pos_session  ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
 alter table pos_counter_settlement rename to udm_pos_counter_settlement;
-    ALTER TABLE udm_pos_counter_settlement  ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
 --
 
 --
@@ -808,6 +807,8 @@ alter table udm_drug_classification
     rename constraint drug_classification_pkey to udm_drug_classification_pkey;
 alter table udm_inventory_composition
     rename constraint inventory_composition_pkey to udm_inventory_composition_pkey;
+alter table udm_wanted_item
+    rename constraint wanted_note_pkey to udm_wanted_item_pkey;
 alter table udm_pos_counter
     rename constraint pos_counter_pkey to udm_pos_counter_pkey;
 alter table udm_pos_session
@@ -870,6 +871,8 @@ alter table udm_pos_counter_settlement
     ALTER TABLE udm_pos_session ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE udm_pos_counter_settlement ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE udm_pos_counter_settlement ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
+    ALTER TABLE udm_wanted_item ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
+    ALTER TABLE udm_wanted_item ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE udm_doctor ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE udm_doctor ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE udm_drug_classification ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
@@ -878,15 +881,13 @@ alter table udm_pos_counter_settlement
     ALTER TABLE udm_inventory_composition ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
 
 ALTER TABLE financial_year ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
-
-
 ALTER TABLE print_template ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
-
+ALTER TABLE udm_wanted_item ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
 ALTER TABLE udm_doctor ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
-
 ALTER TABLE udm_drug_classification ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
-
 ALTER TABLE udm_inventory_composition ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
+ALTER TABLE udm_pos_session  ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
+ALTER TABLE udm_pos_counter_settlement  ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
 
 select now() as time, 'SETTING UUID AS COLUMN FOR TABLES ENDS' as msg;
 
@@ -921,16 +922,6 @@ ALTER TABLE branch ADD COLUMN IF NOT EXISTS gst_registration_uuid uuid;
     UPDATE branch b SET gst_registration_uuid = a.uuid_id FROM gst_registration a WHERE a.id = b.gst_registration_id;
 select now() as time, 'UUID_CHANGES FOR BRANCH ENDS' as msg;
 --## BRANCH
----------------------------------------------------------------------------
-
----------------------------------------------------------------------------
---## UDM_POS_COUNTER
-select now() as time, 'UUID_CHANGES FOR UDM_POS_COUNTER STARTS' as msg;
-ALTER TABLE udm_pos_counter ADD COLUMN IF NOT EXISTS branch_uuid uuid;
-------------------
-    UPDATE udm_pos_counter b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
-select now() as time, 'UUID_CHANGES FOR UDM_POS_COUNTER ENDS' as msg;
---## UDM_POS_COUNTER
 ---------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------
@@ -1094,6 +1085,16 @@ select now() as time, 'UUID_CHANGES FOR TDS_ON_VOUCHER ENDS' as msg;
 ---------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------
+--## UDM_POS_COUNTER
+select now() as time, 'UUID_CHANGES FOR UDM_POS_COUNTER STARTS' as msg;
+ALTER TABLE udm_pos_counter ADD COLUMN IF NOT EXISTS branch_uuid uuid;
+------------------
+    UPDATE udm_pos_counter b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
+select now() as time, 'UUID_CHANGES FOR UDM_POS_COUNTER ENDS' as msg;
+--## UDM_POS_COUNTER
+---------------------------------------------------------------------------
+
+---------------------------------------------------------------------------
 --## UDM_POS_SESSION
 select now() as time, 'uuid_changes for udm_pos_session starts' as msg;
 alter table udm_pos_session add column if not exists settlement_uuid uuid;
@@ -1141,6 +1142,19 @@ ALTER TABLE udm_inventory_composition ADD COLUMN IF NOT EXISTS drug_classificati
         WHERE t.drug_classifications IS NOT NULL;
 select now() as time, 'UUID_CHANGES FOR UDM_INVENTORY_COMPOSITION ENDS' as msg;
 --## UDM_INVENTORY_COMPOSITION
+---------------------------------------------------------------------------
+
+---------------------------------------------------------------------------
+--## UDM_WANTED_ITEM
+select now() as time, 'UUID_CHANGES FOR UDM_WANTED_ITEM STARTS' as msg;
+ALTER TABLE udm_wanted_item ADD COLUMN IF NOT EXISTS branch_uuid uuid;
+ALTER TABLE udm_wanted_item ADD COLUMN IF NOT EXISTS inventory_uuid uuid;
+ALTER TABLE udm_wanted_item ADD COLUMN IF NOT EXISTS item_description text;
+------------------
+    UPDATE udm_wanted_item b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
+    UPDATE udm_wanted_item b SET inventory_uuid = a.uuid_id FROM inventory a WHERE a.id = b.inventory_id;
+select now() as time, 'UUID_CHANGES FOR UDM_WANTED_ITEM ENDS' as msg;
+--## UDM_WANTED_ITEM
 ---------------------------------------------------------------------------
 --*/
 
@@ -2278,7 +2292,6 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     drop table if exists power_bi;
     drop table if exists price_list_condition;
     drop table if exists price_list;
-    drop table if exists wanted_note;
     drop table if exists shipment;
     drop table if exists stock_journal;
     drop table if exists stock_journal_inv_item;
@@ -2445,6 +2458,10 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         alter table udm_pos_counter drop column if exists branch_id;
         alter table udm_pos_counter rename column branch_uuid to branch_id;
         alter table udm_pos_counter alter column branch_id set not null;
+        --
+        alter table udm_wanted_item drop column if exists branch_id;
+        alter table udm_wanted_item rename column branch_uuid to branch_id;
+        alter table udm_wanted_item alter column branch_id set not null;
 -- GST_REGISTRATION
     alter table gst_registration drop column if exists id;
     alter table gst_registration rename column uuid_id to id;
@@ -2476,6 +2493,10 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         alter table udm_vendor_item_map drop column if exists inventory_id;
         alter table udm_vendor_item_map rename column inventory_uuid to inventory_id;
         alter table udm_vendor_item_map alter column inventory_id set not null;
+        --
+        alter table udm_wanted_item drop column if exists inventory_id;
+        alter table udm_wanted_item rename column inventory_uuid to inventory_id;
+        alter table udm_wanted_item alter column inventory_id set not null;
 -- MANUFACTURER
     alter table manufacturer drop column if exists id;
     alter table manufacturer rename column uuid_id to id;
@@ -2622,12 +2643,12 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
     alter table udm_doctor drop column if exists id;
     alter table udm_doctor rename column uuid_id to id;
     alter table udm_doctor alter column id set not null;
-    ALTER TABLE udm_doctor ADD CONSTRAINT udm_doctor_pkey PRIMARY KEY (id);
+    alter table udm_doctor add constraint udm_doctor_pkey primary key (id);
 -- UDM_DRUG_CLASSIFICATION
     alter table udm_drug_classification drop column if exists id;
     alter table udm_drug_classification rename column uuid_id to id;
     alter table udm_drug_classification alter column id set not null;
-    ALTER TABLE udm_drug_classification ADD CONSTRAINT udm_drug_classification_pkey PRIMARY KEY (id);
+    alter table udm_drug_classification add constraint udm_drug_classification_pkey primary key (id);
         --
         alter table udm_inventory_composition drop column if exists drug_classifications;
         alter table udm_inventory_composition rename column drug_classifications_uuid to drug_classifications;
@@ -2635,10 +2656,15 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
     alter table udm_inventory_composition drop column if exists id;
     alter table udm_inventory_composition rename column uuid_id to id;
     alter table udm_inventory_composition alter column id set not null;
-    ALTER TABLE udm_inventory_composition ADD CONSTRAINT udm_inventory_composition_pkey PRIMARY KEY (id);
+    alter table udm_inventory_composition add constraint udm_inventory_composition_pkey primary key (id);
         --
         alter table inventory drop column if exists udf_compositions;
         alter table inventory rename column udf_compositions_uuid to udf_compositions;
+-- UDM_WANTED_ITEM
+    alter table udm_wanted_item drop column if exists id;
+    alter table udm_wanted_item rename column uuid_id to id;
+    alter table udm_wanted_item alter column id set not null;
+    alter table udm_wanted_item add constraint udm_wanted_item_pkey primary key (id);
 
 select now() as time, 'RENAMING AND DROPPING UUID COLUMN END' as msg;
 -------------------------------------------------------------------------------------------------

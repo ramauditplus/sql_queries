@@ -62,5 +62,5 @@ JOIN
      AND ccu.table_schema = tc.table_schema
 WHERE
     tc.constraint_type = 'FOREIGN KEY'
-    AND ccu.table_name = 'inventory';
+    AND ccu.table_name = 'wanted_note';
 
