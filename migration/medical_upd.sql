@@ -2264,8 +2264,6 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     drop table if exists personal_use_purchase_inv_item;
     drop table if exists personal_use_purchase;
     drop table if exists pos_offline_voucher;
-    drop table if exists pos_counter_session;
-    drop table if exists pos_counter_settlement;
     drop table if exists pos_server;
     drop table if exists power_bi;
     drop table if exists price_list_condition;
