@@ -1374,11 +1374,11 @@ select now() as time, 'UUID_CHANGES FOR BATCH branch_id ENDS' as msg;
 select now() as time, 'UUID_CHANGES FOR BATCH inv_id, sec_id, manu_id STARTS' as msg;
 create index on batch (inventory_id);
 UPDATE batch b
-    SET inventory_uuid = a.uuid_id,
-        category_id = a.category_id,
+    SET inventory_uuid  = a.uuid_id,
+        category_id     = a.category_id,
         sub_category_id = a.sub_category_id,
         manufacturer_id = a.manufacturer_id,
-        inv_retail_qty = a.retail_qty
+        inv_retail_qty  = a.retail_qty
     FROM inventory a WHERE a.id = b.inventory_id;
 select now() as time, 'UUID_CHANGES FOR BATCH inv_id, sec_id, manu_id ENDS' as msg;
 --##
