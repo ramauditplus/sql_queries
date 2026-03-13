@@ -1176,6 +1176,8 @@ alter table udm_pos_session add column if not exists settlement_uuid uuid;
 ------------------
     update udm_pos_session b set settlement_uuid = a.uuid_id from udm_pos_counter_settlement a where a.id = b.settlement_id;
     alter table udm_pos_session alter column cash_denomination type jsonb using cash_denomination::jsonb;
+    alter table udm_pos_session alter column petty_cash_denomination type jsonb using petty_cash_denomination::jsonb;
+    alter table udm_pos_session alter column other_denomination type jsonb using other_denomination::jsonb;
 select now() as time, 'uuid_changes for udm_pos_session ends' as msg;
 --## UDM_POS_SESSION
 ---------------------------------------------------------------------------
