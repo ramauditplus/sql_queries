@@ -805,32 +805,38 @@ ALTER TABLE voucher_type ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
     UPDATE voucher_type SET uuid_id = '019591f3-5c00-7048-8000-000000000000' WHERE id = 23;
     alter table voucher_type alter column config type jsonb using config::jsonb;
 --##
- UPDATE voucher_type
-    SET config = (SELECT jsonb_object_agg(
-                                 key,
-                                 value_cleaned
+UPDATE voucher_type
+SET config = (SELECT jsonb_object_agg(
+                             key,
+                             value_cleaned
+                     )
+              FROM jsonb_each(config) t(key, value)
+                       CROSS JOIN LATERAL (
+                  SELECT jsonb_strip_nulls(
+                                 value
+                                     - 'allowed_expense_accounts'
+                                     - 'allowed_credit_accounts'
+                                     - 'allowed_emi_accounts'
+                                     - 'allowed_card_accounts'
+                                     - 'exchange_account'
+                                     - 'shipping_charge_account'
+                                     - 'by_accounts'
+                                     - 'to_accounts'
+                                     - 'default_print_template'
+                                     - 'cheque_print_template'
+                                     - 'approvers'
                          )
-                  FROM jsonb_each(config) t(key, value)
-                           CROSS JOIN LATERAL (
-                      SELECT jsonb_strip_nulls(
-                                     value
-                                         - 'allowed_expense_accounts'
-                                         - 'allowed_credit_accounts'
-                                         - 'allowed_emi_accounts'
-                                         - 'allowed_card_accounts'
-                                         - 'exchange_account'
-                                         - 'shipping_charge_account'
-                                         - 'by_accounts'
-                                         - 'to_accounts'
-                                         - 'default_print_template'
-                                         - 'cheque_print_template'
-                                         - 'approvers'
-                             )
-                      ) AS cleaned(value_cleaned));
+                  ) AS cleaned(value_cleaned));
 --##
-   UPDATE voucher_type SET config = config -> lower(base_type) WHERE config ? lower(base_type);
-   --##
-    UPDATE voucher_type SET name = 'Stock Journal', base_type = 'STOCK_JOURNAL' WHERE id = 10;
+UPDATE voucher_type SET config = config -> lower(base_type) WHERE config ? lower(base_type);
+--##
+UPDATE voucher_type
+SET config = config -> 'inventory'
+WHERE base_type IN ('PURCHASE', 'SALE', 'CREDIT_NOTE', 'DEBIT_NOTE')
+  AND config ? 'inventory';
+--##
+UPDATE voucher_type SET name = 'Stock Journal', base_type = 'STOCK_JOURNAL' WHERE id = 10;
+--##
 UPDATE voucher_type vt
         SET members = (SELECT jsonb_agg(
                                       jsonb_set(

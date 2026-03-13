@@ -64,3 +64,12 @@ WHERE
     tc.constraint_type = 'FOREIGN KEY'
     AND ccu.table_name = 'wanted_note';
 
+--## find column type
+SELECT table_schema,
+       table_name,
+       column_name,
+       data_type
+FROM information_schema.columns
+WHERE data_type = 'json'
+ORDER BY table_schema, table_name;
+
