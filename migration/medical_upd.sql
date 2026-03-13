@@ -709,6 +709,7 @@ ALTER TABLE member ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
 ALTER TABLE division ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
 --##
 UPDATE member SET uuid_id = '01941f29-7c00-7000-8000-000000000000' WHERE id = 1;
+alter table member alter column remote_access set not null;
 --##
 select now() as time, 'SETTING UUID AS COLUMN STARTS' as msg;
 --##
