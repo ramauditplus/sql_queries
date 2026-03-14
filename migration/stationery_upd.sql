@@ -2627,7 +2627,6 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         --
         -- alter table udm_wanted_item drop column if exists inventory_id;
         -- alter table udm_wanted_item rename column inventory_uuid to inventory_id;
-        -- alter table udm_wanted_item alter column inventory_id set not null;
 -- MANUFACTURER
     alter table manufacturer drop column if exists id;
     alter table manufacturer rename column uuid_id to id;
