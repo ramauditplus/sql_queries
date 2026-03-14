@@ -1275,12 +1275,12 @@ alter table member
     add if not exists perms text[],
     add if not exists ui_perms jsonb;
 --##
-update member m
-set
-    perms    = coalesce(mr.perms, '{}'::text[]),
-    ui_perms = coalesce(to_jsonb(mr.perms), '[]'::jsonb)
-from member_role mr
-where mr.name = m.role_id;
+-- update member m
+-- set
+--     perms    = coalesce(mr.perms, '{}'::text[]),
+--     ui_perms = coalesce(to_jsonb(mr.perms), '[]'::jsonb)
+-- from member_role mr
+-- where mr.name = m.role_id;
 --##
 alter table member alter column settings type jsonb using settings::jsonb;
 --## MEMBER

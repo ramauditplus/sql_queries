@@ -1,10 +1,9 @@
-UPDATE member t
-SET
-perms = (
-    SELECT array_agg(COALESCE(m.new_perm, p))
-    FROM unnest(t.perms) AS p
+UPDATE member_role r
+SET perms = (
+    SELECT array_agg(DISTINCT COALESCE(m.new_perm, p))
+    FROM unnest(r.perms) AS p
     LEFT JOIN (
-VALUES
+        VALUES
 
 -- account
 ('view_account','account_get'),
@@ -150,16 +149,16 @@ VALUES
 ('delete_wanted_note','wanted_item_configuration'),
 ('set_wanted_note_status','wanted_item_status')
 
+    ) AS m(old_perm, new_perm)
+    ON m.old_perm = p
+);
 
-    ) AS m(old_perm,new_perm)
-    ON p = m.old_perm
-),
-
-ui_perms = (
-    SELECT jsonb_agg(COALESCE(m.new_perm, p))
-    FROM jsonb_array_elements_text(t.ui_perms) AS p
-    LEFT JOIN (
-VALUES
+UPDATE member_role r
+SET perms = (
+    SELECT array_agg(DISTINCT m.new_perm)
+    FROM unnest(r.perms) AS p
+    JOIN (
+        VALUES
 
 -- account
 ('view_account','account_get'),
@@ -305,8 +304,6 @@ VALUES
 ('delete_wanted_note','wanted_item_configuration'),
 ('set_wanted_note_status','wanted_item_status')
 
-
-
-    ) AS m(old_perm,new_perm)
-    ON p = m.old_perm
+    ) AS m(old_perm, new_perm)
+    ON m.old_perm = p
 );
