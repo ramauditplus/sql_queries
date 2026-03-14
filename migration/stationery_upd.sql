@@ -2843,5 +2843,24 @@ select now() as time, 'ADDING REQUIRED INDEX START' as msg;
 select now() as time, 'ADDING REQUIRED INDEX END' as msg;
 --## last query
 delete from unit_conversion where conversion = 1;
+--## drop if any default exists
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN
+        SELECT table_schema, table_name, column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+        AND column_default IS NOT NULL
+    LOOP
+        EXECUTE format(
+            'ALTER TABLE %I.%I ALTER COLUMN %I DROP DEFAULT',
+            r.table_schema,
+            r.table_name,
+            r.column_name
+        );
+    END LOOP;
+END $$;
 --##
 select now() as time, 'MIGRATION END' as msg;
