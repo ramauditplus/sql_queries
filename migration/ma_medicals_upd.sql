@@ -1,3 +1,5 @@
+select now() as time, 'MIGRATION START' as msg;
+--##
 select now() as time, 'general_migration_start' as msg;
 -- REMOVE RECORDS RELATED TO UNWANTED TABLE
 
@@ -139,58 +141,51 @@ BEGIN
         EXECUTE 'DROP VIEW IF EXISTS public.' || quote_ident(r.viewname) || ' CASCADE';
     END LOOP;
 END $$;
+--##
 
---## MODIFY_TABLE
-alter table vendor_bill_map rename to udm_vendor_bill_map;
-alter table vendor_item_map rename to udm_vendor_item_map;
---
--- drop table if exists doctor;
-alter table doctor rename to udm_doctor;
-    alter table udm_doctor drop if exists display_name;
-    alter table udm_doctor drop if exists alias_name;
-    alter table udm_doctor drop if exists age;
-alter table if exists drug_classification rename to udm_drug_classification;
-alter table if exists inventory_composition rename to udm_inventory_composition;
---
-alter table pos_counter rename to udm_pos_counter;
---
+--## ORGANIZATION
 alter table organization
     add if not exists created_by uuid,
-    add if not exists updated_by uuid;
---
+    add if not exists updated_by uuid,
+    add if not exists email_config jsonb,
+    add if not exists udf_wanted_item_config jsonb;
+--##
 alter table organization
     alter column configuration type jsonb using configuration::jsonb,
     alter column license_claims type jsonb using license_claims::jsonb;
---## f_key
-alter table udm_vendor_bill_map
-    rename constraint vendor_bill_map_pkey to udm_vendor_bill_map_pkey;
-alter table udm_vendor_item_map
-    rename constraint vendor_item_map_pkey to udm_vendor_item_map_pkey;
-alter table udm_doctor
-    rename constraint doctor_pkey to udm_doctor_pkey;
-alter table udm_drug_classification
-    rename constraint drug_classification_pkey to udm_drug_classification_pkey;
-alter table udm_inventory_composition
-    rename constraint inventory_composition_pkey to udm_inventory_composition_pkey;
---## f_key
---## MODIFY_TABLE
-
---## DEVICE
-drop table if exists device;
 --##
-create table if not exists device
+UPDATE organization
+SET email_config = configuration -> 'email_config',
+    configuration = configuration - 'email_config'
+WHERE configuration IS NOT NULL
+  AND configuration ? 'email_config';
+--##
+UPDATE organization
+SET udf_wanted_item_config = configuration -> 'wanted_note_config',
+    configuration = configuration - 'wanted_note_config'
+WHERE configuration IS NOT NULL
+  AND configuration ? 'wanted_note_config';
+--## ORGANIZATION
+
+--## GSTR_2B
+drop table if exists gstr_2b;
+--##
+create table gstr_2b
 (
-    id         uuid      not null primary key,
-    name       text      not null,
-    branch_id  uuid      not null,
-    session_id uuid,
-    expired_at timestamp,
-    created_by uuid      not null,
-    updated_by uuid      not null,
-    created_at timestamp not null,
-    updated_at timestamp not null
+    ctin       text             not null,
+    trdnm      text             not null,
+    inum       text             not null,
+    dt         date             not null,
+    val        double precision not null,
+    txval      double precision not null,
+    igst       double precision not null,
+    cgst       double precision not null,
+    sgst       double precision not null,
+    cess       double precision not null,
+    created_at timestamp        not null,
+    created_by uuid             not null
 );
---## DEVICE
+--## GSTR_2B
 
 --## PERMISSION
 drop table if exists permission;
@@ -203,206 +198,263 @@ create table if not exists permission
     created_at timestamp not null,
     updated_at timestamp not null
 );
+--##
 --## permission insert
 insert into permission (name, created_by, updated_by, created_at, updated_at)
 values
     --account
-    ('account_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('account_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('account_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('account_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('account_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('account_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('account_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('account_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('account_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('account_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --account_type
-    ('account_type_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('account_type_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('account_type_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('account_type_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('account_type_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('account_type_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('account_type_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('account_type_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('account_type_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('account_type_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --bank_beneficiary
-    ('bank_beneficiary_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('bank_beneficiary_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('bank_beneficiary_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('bank_beneficiary_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('bank_beneficiary_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('bank_beneficiary_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('bank_beneficiary_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('bank_beneficiary_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('bank_beneficiary_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('bank_beneficiary_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --base_voucher_type
-    ('base_voucher_type_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('base_voucher_type_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('base_voucher_type_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('base_voucher_type_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('base_voucher_type_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('base_voucher_type_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('base_voucher_type_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('base_voucher_type_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --batch
-    ('batch_label', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('batch_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('batch_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('batch_label', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('batch_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('batch_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --bill_allocation_breakup
-    ('bill_allocation_breakup', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('bill_allocation_breakup', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --bill_of_material
-    ('bill_of_material_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('bill_of_material_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('bill_of_material_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('bill_of_material_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('bill_of_material_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('bill_of_material_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('bill_of_material_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('bill_of_material_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('bill_of_material_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('bill_of_material_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --branch
-    ('branch_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('branch_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('branch_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('branch_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('branch_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('branch_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('branch_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('branch_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('branch_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('branch_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --gst_registration
-    ('gst_registration_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('gst_registration_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('gst_registration_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('gst_registration_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('gst_registration_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('gst_registration_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('gst_registration_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('gst_registration_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('gst_registration_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('gst_registration_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --gst_tax
-    ('gst_tax_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('gst_tax_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --gstr_2b
-    ('gstr_2b_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('gstr_2b_reconcile', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('gstr_2b_upload', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('gstr_2b_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('gstr_2b_reconcile', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('gstr_2b_upload', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --section
-    ('section_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('section_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('section_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('section_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('section_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('section_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('section_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('section_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('section_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('section_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    --inventory_category
+    ('inventory_category_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('inventory_category_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('inventory_category_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('inventory_category_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('inventory_category_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    --inventory_sub_category
+    ('inventory_sub_category_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('inventory_sub_category_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('inventory_sub_category_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('inventory_sub_category_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('inventory_sub_category_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --inventory
-    ('inventory_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('inventory_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('inventory_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('inventory_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('inventory_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('inventory_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('inventory_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('inventory_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('inventory_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('inventory_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --inventory_opening
-    ('inventory_opening', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('inventory_opening', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --unit_conversion
-    ('unit_conversion_set', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('unit_conversion_set', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --unit
-    ('unit_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('unit_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('unit_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('unit_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('unit_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('unit_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('unit_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('unit_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('unit_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('unit_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --financial_report
-    ('financial_report', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('opening_balance_difference', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('financial_report', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('opening_balance_difference', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --financial_year
-    ('financial_year_add', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('financial_year_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('financial_year_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('financial_year_add', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('financial_year_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('financial_year_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --manufacturer
-    ('manufacturer_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('manufacturer_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('manufacturer_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('manufacturer_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('manufacturer_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('manufacturer_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('manufacturer_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('manufacturer_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('manufacturer_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('manufacturer_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --warehouse
-    ('warehouse_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('warehouse_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('warehouse_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('warehouse_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('warehouse_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('warehouse_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('warehouse_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('warehouse_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('warehouse_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('warehouse_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --member
-    ('member_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('member_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('member_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('member_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('member_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('member_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('member_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('member_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --permission
-    ('permission_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('permission_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('permission_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('permission_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('permission_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('permission_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('permission_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('permission_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('permission_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('permission_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --tds_nature_of_payment
-    ('tds_nature_of_payment_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('tds_nature_of_payment_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('tds_nature_of_payment_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('tds_nature_of_payment_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('tds_nature_of_payment_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('tds_nature_of_payment_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('tds_nature_of_payment_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('tds_nature_of_payment_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('tds_nature_of_payment_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('tds_nature_of_payment_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --tds_section_breakup
-    ('tds_section_breakup', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('tds_section_breakup', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --print_layout
-    ('print_layout_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('print_layout_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('print_layout_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('print_layout_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('print_layout_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('print_layout_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('print_layout_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('print_layout_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --print_template
-    ('print_template_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('print_template_reset', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('print_template_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('print_template_cancel', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('print_template_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('print_template_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('print_template_reset', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('print_template_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('print_template_cancel', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('print_template_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --stock_location
-    ('stock_location_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('stock_location_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('stock_location_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('stock_location_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('stock_location_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('stock_location_assign', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('stock_location_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('stock_location_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('stock_location_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('stock_location_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('stock_location_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('stock_location_assign', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --set_inventory_branch_price_configuration
-    ('price_configuration_set', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('price_configuration_set', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --organization
-    ('organization_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('organization_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('organization_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('organization_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --voucher_register
-    ('voucher_register_detail', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('voucher_register_group', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('voucher_register_detail', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('voucher_register_group', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --voucher_type
-    ('voucher_type_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('voucher_type_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('voucher_type_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('voucher_type_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('voucher_type_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('voucher_type_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('voucher_type_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('voucher_type_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('voucher_type_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('voucher_type_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --voucher
-    ('voucher_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('voucher_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('voucher_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('voucher_cancel', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('voucher_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
+    ('voucher_create', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('voucher_update', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('voucher_get', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('voucher_cancel', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('voucher_delete', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
     --report and other
-    ('account_book', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('account_outstanding', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('account_transaction_history', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('bill_outstanding', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('bank_collection', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('bank_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('gst_r1', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('day_book', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('bank_reconciliation', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('sale_analysis', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('stock_analysis', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('expiry_analysis', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('negative_stock_analysis', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('non_movement_analysis', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('inventory_batch', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('inventory_book', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('inventory_transaction_history', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('memorandum', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('partywise_detail', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('get_batch_detail_with_stock_location', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('get_inventory_branch_stock_location_label', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('get_stock_location_wise_branch_stock', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('get_transfer_pending', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('account_opening', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp),
-    ('tds_detail', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', current_timestamp, current_timestamp);
---##
+    ('account_book', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('account_outstanding', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('account_transaction_history', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('bill_outstanding', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('bank_collection', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('bank_list', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('gst_r1', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('day_book', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('bank_reconciliation', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('sale_analysis', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('stock_analysis', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('expiry_analysis', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('negative_stock_analysis', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('non_movement_analysis', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('inventory_batch', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('inventory_book', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('inventory_transaction_history', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('memorandum', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('partywise_detail', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('get_batch_detail_with_stock_location', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('get_inventory_branch_stock_location_label', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('get_stock_location_wise_branch_stock', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('get_transfer_pending', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('account_opening', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('tds_detail', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    -- wanted_item_config
+    ('wanted_item_configuration', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now()),
+    ('wanted_item_status', '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', now(), now());
 --## PERMISSION
 
 --## SECTION
+drop table if exists section;
 --##
 create table if not exists section
 (
-    id         uuid      not null primary key,
+    id         uuid       not null primary key,
     old_id     int,
-    name       text      not null,
-    created_by int       not null,
-    updated_by int       not null,
-    created_at timestamp not null,
-    updated_at timestamp not null
+    name       text       not null,
+    created_by uuid       not null,
+    updated_by uuid       not null,
+    created_at timestamp  not null,
+    updated_at timestamp  not null
 );
 --##
-INSERT INTO section (id, old_id, name, created_by, updated_by, created_at, updated_at)
-SELECT uuidv7(), id, name, created_by, updated_by, created_at, updated_at
-FROM category_option;
+INSERT INTO section
+SELECT uuidv7(), id, name, '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', created_at, updated_at
+FROM category_option
+where category_id = 'INV_CAT1';
 --## SECTION
+
+--## INVENTORY_CATEGORY
+drop table if exists inventory_category;
+--##
+create table if not exists inventory_category
+(
+    id         uuid       not null primary key,
+    old_id     int,
+    name       text       not null,
+    created_by uuid       not null,
+    updated_by uuid       not null,
+    created_at timestamp  not null,
+    updated_at timestamp  not null
+);
+--##
+INSERT INTO inventory_category
+SELECT uuidv7(), id, name, '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', created_at, updated_at
+FROM category_option
+where category_id = 'INV_CAT2';
+--## INVENTORY_CATEGORY
+
+--## INVENTORY_SUB_CATEGORY
+drop table if exists inventory_sub_category;
+--##
+create table if not exists inventory_sub_category
+(
+    id         uuid       not null primary key,
+    old_id     int,
+    name       text       not null,
+    created_by uuid       not null,
+    updated_by uuid       not null,
+    created_at timestamp  not null,
+    updated_at timestamp  not null
+);
+--##
+INSERT INTO inventory_sub_category
+SELECT uuidv7(), id, name, '01941f29-7c00-7000-8000-000000000000', '01941f29-7c00-7000-8000-000000000000', created_at, updated_at
+FROM category_option
+where category_id = 'INV_CAT3';
+--## INVENTORY_SUB_CATEGORY
 
 --## UNIT AND UNIT_CONVERSION
 drop table if exists unit;
@@ -447,7 +499,7 @@ from a;
 insert into unit_conversion
 select (select u.id from unit u where symbol = '1'), id, symbol::float
 from unit;
---## UNIT AND UNIT_CONVERSION
+--##
 
 --## BASE_VOUCHER_TYPE
 drop table if exists base_voucher_type;
@@ -570,12 +622,97 @@ values ('BAG', 'BAG-BAGS'),
        ('OTH', 'OTH-OTHERS');
 --##
 --## UQC
-
-------------------------------------------------------------------------
--- UUID CHANGES
-------------------------------------------------------------------------
+ALTER TABLE warehouse ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
+--##
+ALTER TABLE manufacturer ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
+--##
+drop table if exists bank;
+--##
+create table bank
+(
+    id         uuid not null primary key,
+    name       text not null,
+    code       text not null,
+    short_name text not null,
+    e_banking  boolean
+);
+--##
+INSERT INTO bank (id, name, code, short_name, e_banking)
+VALUES
+('0195165a-bc00-7030-8000-000000000000', 'Axis Bank', 'UTIB', 'AXIS', NULL),
+('01951b81-1800-7031-8000-000000000000', 'Canara Bank', 'CNRB', 'CANARA', NULL),
+('019520a7-7400-7032-8000-000000000000', 'HDFC Bank', 'HDFC', 'HDFC', NULL),
+('019525cd-d000-7033-8000-000000000000', 'ICICI Bank Ltd', 'ICIC', 'ICICI', NULL),
+('01952af4-2c00-7034-8000-000000000000', 'IDBI Bank', 'IBKL', 'IDBI', NULL),
+('0195301a-8800-7035-8000-000000000000', 'Indian Bank', 'IDIB', 'INDIAN', NULL),
+('01953540-e400-7036-8000-000000000000', 'Indian Overseas Bank', 'IOBA', 'IOB', NULL),
+('01953a67-4000-7037-8000-000000000000', 'Karur Vysya Bank', 'KVBL', 'KVB', NULL),
+('01953f8d-9c00-7038-8000-000000000000', 'State Bank of India', 'SBIN', 'SBI', NULL),
+('019544b3-f800-7039-8000-000000000000', 'Tamilnad Mercantile Bank Ltd', 'TMBL', 'TMB', true),
+('019549da-5400-703a-8000-000000000000', 'Vijaya Bank', 'VIJB', 'VIJAYA', NULL),
+('01954f00-b000-703b-8000-000000000000', 'Punjab National Bank', 'PUNB', 'PUNB', NULL);
+--##
+alter table bank add unique (code);
+alter table bank add unique (name);
+--##
+drop table if exists bank_beneficiary;
+--##
+create table bank_beneficiary
+(
+    id                uuid      not null primary key,
+    name              text      not null,
+    code              text      not null,
+    bank_id           uuid      not null,
+    bank_account_type text      not null,
+    bank_account_no   text      not null,
+    branch_name       text,
+    ifs_code          text,
+    micr_code         text,
+    bsr_code          text,
+    branch_code       text,
+    created_at        timestamp not null,
+    updated_at        timestamp not null,
+    created_by        uuid      not null,
+    updated_by        uuid      not null
+);
+--##
+drop table if exists device;
+--##
+create table if not exists device
+(
+    id         uuid      not null primary key,
+    name       text      not null,
+    branch_id  uuid      not null,
+    session_id uuid,
+    expired_at timestamp,
+    created_by uuid      not null,
+    updated_by uuid      not null,
+    created_at timestamp not null,
+    updated_at timestamp not null
+);
+--##
+drop table if exists bill_of_material;
+--##
+create table bill_of_material
+(
+    id           uuid      not null primary key,
+    name         text      not null,
+    inventory_id uuid      not null,
+    created_at   timestamp not null,
+    updated_at   timestamp not null,
+    created_by   uuid      not null,
+    updated_by   uuid      not null
+);
+--##
+ALTER TABLE member ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
+--##
+ALTER TABLE division ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
+--##
+UPDATE member SET uuid_id = '01941f29-7c00-7000-8000-000000000000' WHERE id = 1;
+alter table member alter column remote_access set not null;
+--##
 select now() as time, 'SETTING UUID AS COLUMN STARTS' as msg;
-
+--##
 ALTER TABLE account_type ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
     UPDATE account_type SET uuid_id = '01942976-3400-7002-8000-000000000000' WHERE id = 1;
     UPDATE account_type SET uuid_id = '01942e9c-9000-7003-8000-000000000000' WHERE id = 2;
@@ -603,11 +740,15 @@ ALTER TABLE account_type ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
     UPDATE account_type SET uuid_id = '01949fe8-7800-7019-8000-000000000000' WHERE id = 24;
     UPDATE account_type SET uuid_id = '0194a50e-d400-701a-8000-000000000000' WHERE id = 25;
     UPDATE account_type SET uuid_id = '0194aa35-3000-701b-8000-000000000000' WHERE id = 26;
+--##
 ALTER TABLE account_type ADD COLUMN IF NOT EXISTS parent_uuid uuid;
-    UPDATE account_type b SET parent_uuid = a.uuid_id FROM account_type a WHERE a.id = b.parent_id;
-
+--##
+UPDATE account_type b SET parent_uuid = a.uuid_id FROM account_type a WHERE a.id = b.parent_id;
+--##
 ALTER TABLE account ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
+--##
 ALTER TABLE account ADD COLUMN IF NOT EXISTS account_type_uuid uuid;
+--##
     UPDATE account SET uuid_id = '0194af5b-8c00-701c-8000-000000000000', account_type_uuid = '01947bdb-f400-7012-8000-000000000000' WHERE id = 1;
     UPDATE account SET uuid_id = '0194b481-e800-701d-8000-000000000000', account_type_uuid = '01943e0f-a400-7006-8000-000000000000' WHERE id = 2;
     UPDATE account SET uuid_id = '0194b9a8-4400-701e-8000-000000000000', account_type_uuid = '01944d82-b800-7009-8000-000000000000' WHERE id = 3;
@@ -628,35 +769,27 @@ ALTER TABLE account ADD COLUMN IF NOT EXISTS account_type_uuid uuid;
     UPDATE account SET uuid_id = '019506e7-a800-702d-8000-000000000000', account_type_uuid = '019438e9-4800-7005-8000-000000000000' WHERE id = 18;
     UPDATE account SET uuid_id = '01950c0e-0400-702e-8000-000000000000', account_type_uuid = '019433c2-ec00-7004-8000-000000000000' WHERE id = 19;
     UPDATE account SET uuid_id = '01951134-6000-702f-8000-000000000000', account_type_uuid = '01949fe8-7800-7019-8000-000000000000' WHERE id = 20;
-
-ALTER TABLE bank ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
-    UPDATE bank SET uuid_id = '0195165a-bc00-7030-8000-000000000000' WHERE id = 1;
-    UPDATE bank SET uuid_id = '01951b81-1800-7031-8000-000000000000' WHERE id = 2;
-    UPDATE bank SET uuid_id = '019520a7-7400-7032-8000-000000000000' WHERE id = 3;
-    UPDATE bank SET uuid_id = '019525cd-d000-7033-8000-000000000000' WHERE id = 4;
-    UPDATE bank SET uuid_id = '01952af4-2c00-7034-8000-000000000000' WHERE id = 5;
-    UPDATE bank SET uuid_id = '0195301a-8800-7035-8000-000000000000' WHERE id = 6;
-    UPDATE bank SET uuid_id = '01953540-e400-7036-8000-000000000000' WHERE id = 7;
-    UPDATE bank SET uuid_id = '01953a67-4000-7037-8000-000000000000' WHERE id = 8;
-    UPDATE bank SET uuid_id = '01953f8d-9c00-7038-8000-000000000000' WHERE id = 9;
-    UPDATE bank SET uuid_id = '019544b3-f800-7039-8000-000000000000' WHERE id = 10;
-    UPDATE bank SET uuid_id = '019549da-5400-703a-8000-000000000000' WHERE id = 11;
-    UPDATE bank SET uuid_id = '01954f00-b000-703b-8000-000000000000' WHERE id = 12;
-
-ALTER TABLE bank_beneficiary ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
-
-ALTER TABLE branch ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
-
+--##
 ALTER TABLE gst_registration ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
-
-ALTER TABLE inventory ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
-
-ALTER TABLE manufacturer ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
-
-ALTER TABLE sales_person ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
-
-ALTER TABLE tds_nature_of_payment  ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
-
+--##
+ALTER TABLE branch
+    add if not exists uuid_id      uuid DEFAULT uuidv7(),
+    add if not exists account_uuid uuid,
+    add if not exists gst_registration_uuid uuid;
+--##
+update branch b set gst_registration_uuid = a.uuid_id from gst_registration a where a.id = b.gst_registration_id;
+--##
+update branch b set account_uuid = a.uuid_id from account a where a.id = b.account_id;
+--##
+ALTER TABLE branch ADD COLUMN IF NOT EXISTS members_uuid uuid[];
+UPDATE branch t
+        SET members_uuid =
+                (SELECT array_agg(member.uuid_id)
+                 FROM unnest(t.members) AS u(class_id)
+                          JOIN member
+                               ON member.id = u.class_id)
+        WHERE t.members IS NOT NULL;
+--##
 ALTER TABLE voucher_type ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
     UPDATE voucher_type SET uuid_id = '01955427-0c00-703c-8000-000000000000' WHERE id = 1;
     UPDATE voucher_type SET uuid_id = '0195594d-6800-703d-8000-000000000000' WHERE id = 2;
@@ -672,46 +805,40 @@ ALTER TABLE voucher_type ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
     UPDATE voucher_type SET uuid_id = '01958ccd-0000-7047-8000-000000000000' WHERE id = 21;
     UPDATE voucher_type SET uuid_id = '019591f3-5c00-7048-8000-000000000000' WHERE id = 23;
     alter table voucher_type alter column config type jsonb using config::jsonb;
-    UPDATE voucher_type
-    SET config = (SELECT jsonb_object_agg(
-                                 key,
-                                 value_cleaned
+--##
+UPDATE voucher_type
+SET config = (SELECT jsonb_object_agg(
+                             key,
+                             value_cleaned
+                     )
+              FROM jsonb_each(config) t(key, value)
+                       CROSS JOIN LATERAL (
+                  SELECT jsonb_strip_nulls(
+                                 value
+                                     - 'allowed_expense_accounts'
+                                     - 'allowed_credit_accounts'
+                                     - 'allowed_emi_accounts'
+                                     - 'allowed_card_accounts'
+                                     - 'exchange_account'
+                                     - 'shipping_charge_account'
+                                     - 'by_accounts'
+                                     - 'to_accounts'
+                                     - 'default_print_template'
+                                     - 'cheque_print_template'
+                                     - 'approvers'
                          )
-                  FROM jsonb_each(config) t(key, value)
-                           CROSS JOIN LATERAL (
-                      SELECT jsonb_strip_nulls(
-                                     value
-                                         - 'allowed_expense_accounts'
-                                         - 'allowed_credit_accounts'
-                                         - 'allowed_emi_accounts'
-                                         - 'allowed_card_accounts'
-                                         - 'exchange_account'
-                                         - 'shipping_charge_account'
-                                         - 'by_accounts'
-                                         - 'to_accounts'
-                                         - 'default_print_template'
-                                         - 'cheque_print_template'
-                                         - 'approvers'
-                             )
-                      ) AS cleaned(value_cleaned));
-    UPDATE voucher_type SET config = config -> lower(base_type) WHERE config ? lower(base_type);
-    UPDATE voucher_type SET name = 'Stock Journal', base_type = 'STOCK_JOURNAL' WHERE id = 10;
-ALTER TABLE voucher_type ADD COLUMN IF NOT EXISTS sequence_uuid uuid;
-        UPDATE voucher_type b SET sequence_uuid = a.uuid_id FROM voucher_type a WHERE a.id = b.sequence_id;
-
-ALTER TABLE warehouse ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
-
-ALTER TABLE member ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
-    UPDATE member SET uuid_id = '01941f29-7c00-7000-8000-000000000000' WHERE id = 1;
-    ALTER TABLE branch ADD COLUMN IF NOT EXISTS members_uuid uuid[];
-        UPDATE branch t
-        SET members_uuid =
-                (SELECT array_agg(member.uuid_id)
-                 FROM unnest(t.members) AS u(class_id)
-                          JOIN member
-                               ON member.id = u.class_id)
-        WHERE t.members IS NOT NULL;
-        UPDATE voucher_type vt
+                  ) AS cleaned(value_cleaned));
+--##
+UPDATE voucher_type SET config = config -> lower(base_type) WHERE config ? lower(base_type);
+--##
+UPDATE voucher_type
+SET config = config -> 'inventory'
+WHERE base_type IN ('PURCHASE', 'SALE', 'CREDIT_NOTE', 'DEBIT_NOTE')
+  AND config ? 'inventory';
+--##
+UPDATE voucher_type SET name = 'Stock Journal', base_type = 'STOCK_JOURNAL' WHERE id = 10;
+--##
+UPDATE voucher_type vt
         SET members = (SELECT jsonb_agg(
                                       jsonb_set(
                                               elem,
@@ -726,6 +853,61 @@ ALTER TABLE member ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
                                 JOIN member m
                                      ON m.id = (elem ->> 'member_id')::int)
         WHERE vt.members IS NOT NULL;
+--##
+ALTER TABLE voucher_type ADD COLUMN IF NOT EXISTS sequence_uuid uuid;
+        UPDATE voucher_type b SET sequence_uuid = a.uuid_id FROM voucher_type a WHERE a.id = b.sequence_id;
+--##
+ALTER TABLE voucher ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
+--##
+ALTER TABLE inventory ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
+--##
+ALTER TABLE sales_person ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
+--##
+ALTER TABLE tds_nature_of_payment  ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
+
+--## MODIFY_TABLE
+alter table vendor_bill_map rename to udm_vendor_bill_map;
+alter table vendor_item_map rename to udm_vendor_item_map;
+alter table wanted_note rename to udm_wanted_item;
+--
+-- drop table if exists doctor;
+alter table doctor rename to udm_doctor;
+    alter table udm_doctor drop if exists display_name;
+    alter table udm_doctor drop if exists alias_name;
+    alter table udm_doctor drop if exists age;
+alter table if exists drug_classification rename to udm_drug_classification;
+alter table if exists inventory_composition rename to udm_inventory_composition;
+--
+alter table pos_counter rename to udm_pos_counter;
+alter table pos_counter_session rename to udm_pos_session;
+alter table pos_counter_settlement rename to udm_pos_counter_settlement;
+--
+
+--
+--## f_key
+alter table udm_vendor_bill_map
+    rename constraint vendor_bill_map_pkey to udm_vendor_bill_map_pkey;
+alter table udm_vendor_item_map
+    rename constraint vendor_item_map_pkey to udm_vendor_item_map_pkey;
+alter table udm_doctor
+    rename constraint doctor_pkey to udm_doctor_pkey;
+alter table udm_drug_classification
+    rename constraint drug_classification_pkey to udm_drug_classification_pkey;
+alter table udm_inventory_composition
+    rename constraint inventory_composition_pkey to udm_inventory_composition_pkey;
+alter table udm_wanted_item
+    rename constraint wanted_note_pkey to udm_wanted_item_pkey;
+alter table udm_pos_counter
+    rename constraint pos_counter_pkey to udm_pos_counter_pkey;
+alter table udm_pos_session
+    rename constraint pos_counter_session_pkey to udm_pos_session_pkey;
+alter table udm_pos_counter_settlement
+    rename constraint pos_counter_settlement_pkey to udm_pos_counter_settlement_pkey;
+--## f_key
+
+------------------------------------------------------------------------
+-- created & updated by changes
+------------------------------------------------------------------------
     ALTER TABLE ac_txn ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE ac_txn ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE account_type ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
@@ -738,10 +920,10 @@ ALTER TABLE member ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
     ALTER TABLE batch ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE bill_allocation ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE bill_allocation ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
-    ALTER TABLE bill_of_material ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
-    ALTER TABLE bill_of_material ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE branch ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE branch ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
+    ALTER TABLE division ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
+    ALTER TABLE division ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE financial_year ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE financial_year ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE gst_registration ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
@@ -763,8 +945,6 @@ ALTER TABLE member ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
     ALTER TABLE print_template ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE sales_person ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE sales_person ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
-    ALTER TABLE section ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
-    ALTER TABLE section ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE stock_location ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE stock_location ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE tds_nature_of_payment ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
@@ -777,6 +957,12 @@ ALTER TABLE member ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
     ALTER TABLE warehouse ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE udm_pos_counter ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE udm_pos_counter ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
+    ALTER TABLE udm_pos_session ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
+    ALTER TABLE udm_pos_session ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
+    ALTER TABLE udm_pos_counter_settlement ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
+    ALTER TABLE udm_pos_counter_settlement ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
+    ALTER TABLE udm_wanted_item ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
+    ALTER TABLE udm_wanted_item ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE udm_doctor ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE udm_doctor ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
     ALTER TABLE udm_drug_classification ALTER COLUMN created_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
@@ -785,16 +971,13 @@ ALTER TABLE member ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
     ALTER TABLE udm_inventory_composition ALTER COLUMN updated_by TYPE uuid USING '01941f29-7c00-7000-8000-000000000000'::uuid;
 
 ALTER TABLE financial_year ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
-
-ALTER TABLE bill_of_material ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
-
 ALTER TABLE print_template ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
-
+ALTER TABLE udm_wanted_item ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
 ALTER TABLE udm_doctor ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
-
 ALTER TABLE udm_drug_classification ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
-
 ALTER TABLE udm_inventory_composition ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
+ALTER TABLE udm_pos_session  ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
+ALTER TABLE udm_pos_counter_settlement  ADD COLUMN IF NOT EXISTS uuid_id uuid DEFAULT uuidv7();
 
 select now() as time, 'SETTING UUID AS COLUMN FOR TABLES ENDS' as msg;
 
@@ -811,52 +994,12 @@ update account SET code = id;
 alter table account alter column code SET NOT NULL;
 alter table account alter column e_banking_info type jsonb using e_banking_info::jsonb;
 -- Account uuid related changes
-ALTER TABLE account ADD COLUMN IF NOT EXISTS bank_uuid uuid;
-ALTER TABLE account ADD COLUMN IF NOT EXISTS bank_beneficiary_uuid uuid;
 ALTER TABLE account ADD COLUMN IF NOT EXISTS tds_nature_of_payment_uuid uuid;
 ------------------
     UPDATE account b SET account_type_uuid = a.uuid_id FROM account_type a WHERE a.id = b.account_type_id;
-    UPDATE account b SET bank_uuid = a.uuid_id FROM bank a WHERE a.id = b.bank_id;
-    UPDATE account b SET bank_beneficiary_uuid = a.uuid_id FROM bank_beneficiary a WHERE a.id = b.bank_beneficiary_id;
     UPDATE account b SET tds_nature_of_payment_uuid = a.uuid_id FROM tds_nature_of_payment a WHERE a.id = b.tds_nature_of_payment_id;
 select now() as time, 'CHANGES FOR ACCOUNT ENDS' as msg;
 --## ACCOUNT
----------------------------------------------------------------------------
-
----------------------------------------------------------------------------
---## BRANCH
-select now() as time, 'UUID_CHANGES FOR BRANCH STARTS' as msg;
-ALTER TABLE branch ADD COLUMN IF NOT EXISTS account_uuid uuid;
-ALTER TABLE branch ADD COLUMN IF NOT EXISTS gst_registration_uuid uuid;
-------------------
-    UPDATE branch b SET account_uuid = a.uuid_id FROM account a WHERE a.id = b.account_id;
-    UPDATE branch b SET gst_registration_uuid = a.uuid_id FROM gst_registration a WHERE a.id = b.gst_registration_id;
-select now() as time, 'UUID_CHANGES FOR BRANCH ENDS' as msg;
---## BRANCH
----------------------------------------------------------------------------
-
----------------------------------------------------------------------------
---## POS_COUNTER
-select now() as time, 'UUID_CHANGES FOR UDM_POS_COUNTER STARTS' as msg;
-ALTER TABLE udm_pos_counter ADD COLUMN IF NOT EXISTS branch_uuid uuid;
-------------------
-    UPDATE udm_pos_counter b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
-select now() as time, 'UUID_CHANGES FOR UDM_POS_COUNTER ENDS' as msg;
---## POS_COUNTER
----------------------------------------------------------------------------
-
----------------------------------------------------------------------------
---## BANK_BENEFICIARY
-select now() as time, 'UUID_CHANGES FOR BANK_BENEFICIARY STARTS' as msg;
--- bank_beneficiary field related changes
-alter table bank_beneficiary rename beneficiary_code to code;
-alter table bank_beneficiary alter column bank_account_type set not null;
--- bank_beneficiary uuid related changes
-ALTER TABLE bank_beneficiary ADD COLUMN IF NOT EXISTS bank_uuid uuid;
-------------------
-    UPDATE bank_beneficiary b SET bank_uuid = a.uuid_id FROM bank a WHERE a.id = b.bank_id;
-select now() as time, 'UUID_CHANGES FOR BANK_BENEFICIARY ENDS' as msg;
---## BANK_BENEFICIARY
 ---------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------
@@ -874,53 +1017,9 @@ ALTER TABLE bank_txn ADD COLUMN IF NOT EXISTS voucher_uuid uuid;
     UPDATE bank_txn b SET account_uuid = a.uuid_id FROM account a WHERE a.id = b.account_id;
     UPDATE bank_txn b SET alt_account_uuid = a.uuid_id FROM account a WHERE a.id = b.alt_account_id;
     UPDATE bank_txn b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
-    UPDATE bank_txn b SET voucher_uuid = a.session FROM voucher a WHERE a.id = b.voucher_id;
+    UPDATE bank_txn b SET voucher_uuid = a.uuid_id FROM voucher a WHERE a.id = b.voucher_id;
 select now() as time, 'UUID_CHANGES FOR BANK_TXN ENDS' as msg;
 --## BANK_TXN
----------------------------------------------------------------------------
-
----------------------------------------------------------------------------
---## BILL_ALLOCATION
-alter table bill_allocation
-    add if not exists new_ref_no text;
---##
-create index bill_allocation_pending
-    on bill_allocation (pending);
---##
-with a as (select coalesce(nullif(upper(regexp_replace(ref_no, '\s+', '', 'g')), ''), voucher_no, '1') as no,
-                  array_agg(pending)                                                                   as pids
-           from bill_allocation
-           where ref_type = 'NEW'
-           group by account_id, branch_id,
-                    coalesce(nullif(upper(regexp_replace(ref_no, '\s+', '', 'g')), ''), voucher_no, '1'))
-update bill_allocation b
-set new_ref_no = a.no
-from a
-where b.pending = any (a.pids);
---##
-alter table bill_allocation
-    rename ref_no to old_ref_no;
---##
-alter table bill_allocation
-    rename new_ref_no to ref_no;
---##
-select now() as time, 'UUID_CHANGES FOR BILL_ALLOCATION STARTS' as msg;
--- bill_allocation field related changes
-alter table bill_allocation rename meta_data to metadata;
-alter table bill_allocation alter column metadata type jsonb using metadata::jsonb;
-alter table bill_allocation alter column sno type int using sno::int;
--- bill_allocation uuid related changes
-ALTER TABLE bill_allocation ADD COLUMN IF NOT EXISTS account_uuid uuid;
-ALTER TABLE bill_allocation ADD COLUMN IF NOT EXISTS account_type_uuid uuid;
-ALTER TABLE bill_allocation ADD COLUMN IF NOT EXISTS branch_uuid uuid;
-ALTER TABLE bill_allocation ADD COLUMN IF NOT EXISTS voucher_uuid uuid;
-------------------
-    UPDATE bill_allocation b SET account_uuid = a.uuid_id FROM account a WHERE a.id = b.account_id;
-    UPDATE bill_allocation b SET account_type_uuid = a.uuid_id FROM account_type a WHERE a.id = b.account_type_id;
-    UPDATE bill_allocation b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
-    UPDATE bill_allocation b SET voucher_uuid = a.session FROM voucher a WHERE a.id = b.voucher_id;
-select now() as time, 'UUID_CHANGES FOR BILL_ALLOCATION STARTS' as msg;
---## BILL_ALLOCATION
 ---------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------
@@ -928,9 +1027,11 @@ select now() as time, 'UUID_CHANGES FOR BILL_ALLOCATION STARTS' as msg;
 select now() as time, 'UUID_CHANGES FOR INVENTORY STARTS' as msg;
 -- inventory field related changes
 alter table inventory
+    add if not exists section_id  uuid,
+    add if not exists inventory_category_id  uuid,
+    add if not exists inventory_sub_category_id  uuid,
     add if not exists cess_qty    float,
-    add if not exists cess_value    float;
-alter table inventory rename column category1_id to section_id;
+    add if not exists cess_value  float;
 alter table inventory rename column compositions to udf_compositions;
 --##
 update inventory
@@ -944,7 +1045,7 @@ alter table inventory alter column code set not null;
 ALTER TABLE inventory ADD COLUMN IF NOT EXISTS sale_account_uuid uuid;
 ALTER TABLE inventory ADD COLUMN IF NOT EXISTS purchase_account_uuid uuid;
 ALTER TABLE inventory ADD COLUMN IF NOT EXISTS manufacturer_uuid uuid;
-ALTER TABLE inventory ADD COLUMN IF NOT EXISTS section_uuid uuid;
+ALTER TABLE inventory ADD COLUMN IF NOT EXISTS division_uuid uuid;
 ALTER TABLE inventory ADD COLUMN IF NOT EXISTS unit_uuid uuid;
 ALTER TABLE inventory ADD COLUMN IF NOT EXISTS sale_unit_uuid uuid;
 ALTER TABLE inventory ADD COLUMN IF NOT EXISTS purchase_unit_uuid uuid;
@@ -953,7 +1054,10 @@ ALTER TABLE inventory ADD COLUMN IF NOT EXISTS udf_compositions_uuid uuid[];
     UPDATE inventory b SET sale_account_uuid = a.uuid_id FROM account a WHERE a.id = b.sale_account_id and a.transaction_enabled;
     UPDATE inventory b SET purchase_account_uuid = a.uuid_id FROM account a WHERE a.id = b.purchase_account_id and a.transaction_enabled;
     UPDATE inventory b SET manufacturer_uuid = a.uuid_id FROM manufacturer a WHERE a.id = b.manufacturer_id;
-    UPDATE inventory b SET section_uuid = a.id FROM section a WHERE a.old_id = b.section_id;
+    UPDATE inventory b SET division_uuid = a.uuid_id FROM division a WHERE a.id = b.division_id;
+    UPDATE inventory b SET section_id = a.id FROM section a WHERE a.old_id = b.category1_id;
+    UPDATE inventory b SET inventory_category_id = a.id FROM inventory_category a WHERE a.old_id = b.category2_id;
+    UPDATE inventory b SET inventory_sub_category_id = a.id FROM inventory_sub_category a WHERE a.old_id = b.category3_id;
     UPDATE inventory b
     SET unit_uuid          = (select id from unit where symbol = '1'),
         sale_unit_uuid     = (select id from unit where symbol = '1'),
@@ -966,9 +1070,6 @@ ALTER TABLE inventory ADD COLUMN IF NOT EXISTS udf_compositions_uuid uuid[];
                                ON udm_inventory_composition.id = u.class_id)
         WHERE t.udf_compositions IS NOT NULL;
 select now() as time, 'UUID_CHANGES FOR INVENTORY ENDS' as msg;
---
-    alter table inventory drop column if exists section_id;
-    alter table inventory rename column section_uuid to section_id;
 --
     alter table inventory drop column if exists manufacturer_id;
     alter table inventory rename column manufacturer_uuid to manufacturer_id;
@@ -1060,12 +1161,35 @@ ALTER TABLE tds_on_voucher ADD COLUMN IF NOT EXISTS voucher_uuid uuid;
     UPDATE tds_on_voucher b SET tds_account_uuid = a.uuid_id FROM account a WHERE a.id = b.tds_account_id;
     UPDATE tds_on_voucher b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
     UPDATE tds_on_voucher b SET tds_nature_of_payment_uuid = a.uuid_id FROM tds_nature_of_payment a WHERE a.id = b.tds_nature_of_payment_id;
-    UPDATE tds_on_voucher b SET voucher_uuid = a.session FROM voucher a WHERE a.id = b.voucher_id;
+    UPDATE tds_on_voucher b SET voucher_uuid = a.uuid_id FROM voucher a WHERE a.id = b.voucher_id;
 select now() as time, 'UUID_CHANGES FOR TDS_ON_VOUCHER ENDS' as msg;
 --## TDS_ON_VOUCHER
 ---------------------------------------------------------------------------
 
---
+---------------------------------------------------------------------------
+--## UDM_POS_COUNTER
+select now() as time, 'UUID_CHANGES FOR UDM_POS_COUNTER STARTS' as msg;
+ALTER TABLE udm_pos_counter ADD COLUMN IF NOT EXISTS branch_uuid uuid;
+------------------
+    UPDATE udm_pos_counter b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
+select now() as time, 'UUID_CHANGES FOR UDM_POS_COUNTER ENDS' as msg;
+--## UDM_POS_COUNTER
+---------------------------------------------------------------------------
+
+---------------------------------------------------------------------------
+--## UDM_POS_SESSION
+select now() as time, 'uuid_changes for udm_pos_session starts' as msg;
+alter table udm_pos_session add column if not exists settlement_uuid uuid;
+------------------
+    update udm_pos_session b set settlement_uuid = a.uuid_id from udm_pos_counter_settlement a where a.id = b.settlement_id;
+    alter table udm_pos_session alter column cash_denomination type jsonb using cash_denomination::jsonb;
+    alter table udm_pos_session alter column petty_cash_denomination type jsonb using petty_cash_denomination::jsonb;
+    alter table udm_pos_session alter column other_denomination type jsonb using other_denomination::jsonb;
+select now() as time, 'uuid_changes for udm_pos_session ends' as msg;
+--## UDM_POS_SESSION
+---------------------------------------------------------------------------
+
+--/*
 ---------------------------------------------------------------------------
 --## UDM_VENDOR_ITEM_MAP
 select now() as time, 'UUID_CHANGES FOR UDM_VENDOR_ITEM_MAP STARTS' as msg;
@@ -1073,7 +1197,7 @@ ALTER TABLE udm_vendor_item_map ADD COLUMN IF NOT EXISTS vendor_uuid uuid;
 ALTER TABLE udm_vendor_item_map ADD COLUMN IF NOT EXISTS inventory_uuid uuid;
 ------------------
     UPDATE udm_vendor_item_map b SET vendor_uuid = a.uuid_id FROM account a WHERE a.id = b.vendor_id;
-    UPDATE udm_vendor_item_map b SET inventory_uuid = a.uuid_id FROM account a WHERE a.id = b.inventory_id;
+    UPDATE udm_vendor_item_map b SET inventory_uuid = a.uuid_id FROM inventory a WHERE a.id = b.inventory_id;
 select now() as time, 'UUID_CHANGES FOR UDM_VENDOR_ITEM_MAP ENDS' as msg;
 --## UDM_VENDOR_ITEM_MAP
 ---------------------------------------------------------------------------
@@ -1087,19 +1211,7 @@ ALTER TABLE udm_vendor_bill_map ADD COLUMN IF NOT EXISTS vendor_uuid uuid;
 select now() as time, 'UUID_CHANGES FOR UDM_VENDOR_BILL_MAP ENDS' as msg;
 --## UDM_VENDOR_BILL_MAP
 ---------------------------------------------------------------------------
---
 
----------------------------------------------------------------------------
---## BILL_OF_MATERIAL
-select now() as time, 'UUID_CHANGES FOR BILL_OF_MATERIAL STARTS' as msg;
-ALTER TABLE bill_of_material ADD COLUMN IF NOT EXISTS inventory_uuid uuid;
-------------------
-    UPDATE bill_of_material b SET inventory_uuid = a.uuid_id FROM inventory a WHERE a.id = b.inventory_id;
-select now() as time, 'UUID_CHANGES FOR BILL_OF_MATERIAL ENDS' as msg;
---## BILL_OF_MATERIAL
----------------------------------------------------------------------------
-
---
 ---------------------------------------------------------------------------
 --## UDM_INVENTORY_COMPOSITION
 select now() as time, 'UUID_CHANGES FOR UDM_INVENTORY_COMPOSITION STARTS' as msg;
@@ -1115,7 +1227,20 @@ ALTER TABLE udm_inventory_composition ADD COLUMN IF NOT EXISTS drug_classificati
 select now() as time, 'UUID_CHANGES FOR UDM_INVENTORY_COMPOSITION ENDS' as msg;
 --## UDM_INVENTORY_COMPOSITION
 ---------------------------------------------------------------------------
---
+
+---------------------------------------------------------------------------
+--## UDM_WANTED_ITEM
+select now() as time, 'UUID_CHANGES FOR UDM_WANTED_ITEM STARTS' as msg;
+ALTER TABLE udm_wanted_item ADD COLUMN IF NOT EXISTS branch_uuid uuid;
+ALTER TABLE udm_wanted_item ADD COLUMN IF NOT EXISTS inventory_uuid uuid;
+ALTER TABLE udm_wanted_item ADD COLUMN IF NOT EXISTS item_description text;
+------------------
+    UPDATE udm_wanted_item b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
+    UPDATE udm_wanted_item b SET inventory_uuid = a.uuid_id FROM inventory a WHERE a.id = b.inventory_id;
+select now() as time, 'UUID_CHANGES FOR UDM_WANTED_ITEM ENDS' as msg;
+--## UDM_WANTED_ITEM
+---------------------------------------------------------------------------
+--*/
 
 ---------------------------------------------------------------------------
 --## ACCOUNT_DAILY_SUMMARY
@@ -1141,40 +1266,30 @@ ALTER TABLE voucher_numbering ADD COLUMN IF NOT EXISTS branch_uuid uuid;
     UPDATE voucher_numbering b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
 select now() as time, 'UUID_CHANGES FOR VOUCHER_NUMBERING ENDS' as msg;
 --## VOUCHER_NUMBERING
+---------------------------------------------------------------------------
 
--- GSTR_2B --
---##
-alter table if exists gstr_2b drop column IF EXISTS id;
-alter table if exists gstr_2b rename column gst_no to ctin;
-alter table if exists gstr_2b rename column supplier_name to trdnm;
-alter table if exists gstr_2b rename column invoice_no to inum;
-alter table if exists gstr_2b rename column invoice_date to dt;
-alter table if exists gstr_2b rename column total_invoice_value to val;
-alter table if exists gstr_2b rename column total_taxable_amount to txval;
-alter table if exists gstr_2b rename column integrated_tax_amount to igst;
-alter table if exists gstr_2b rename column central_tax_amount to cgst;
-alter table if exists gstr_2b rename column state_tax_amount to sgst;
-alter table if exists gstr_2b rename column cess_amount to cess;
--- GSTR_2B --
-
--- MEMBER --
---##
+---------------------------------------------------------------------------
+select now() as time, 'MEMBER TABLE ALTER START' as msg;
+--## MEMBER
 alter table member
     add if not exists perms text[],
     add if not exists ui_perms jsonb;
 --##
-update member m
-set
-    perms    = coalesce(mr.perms, '{}'::text[]),
-    ui_perms = coalesce(to_jsonb(mr.perms), '[]'::jsonb)
-from member_role mr
-where mr.name = m.role_id;
+-- update member m
+-- set
+--     perms    = coalesce(mr.perms, '{}'::text[]),
+--     ui_perms = coalesce(to_jsonb(mr.perms), '[]'::jsonb)
+-- from member_role mr
+-- where mr.name = m.role_id;
 --##
 alter table member alter column settings type jsonb using settings::jsonb;
--- MEMBER --
+--## MEMBER
+select now() as time, 'MEMBER TABLE ALTER ENDS' as msg;
+---------------------------------------------------------------------------
 
--- PRINT_LAYOUT --
---##
+---------------------------------------------------------------------------
+select now() as time, 'PRINT_LAYOUT TABLE ALTER START' as msg;
+--## PRINT_LAYOUT
 alter table print_layout
     add column if not exists is_default boolean default true;
 --##
@@ -1192,20 +1307,26 @@ alter table print_layout
     rename column type to mode;
 --##
 alter table print_layout alter column sample_data type jsonb using sample_data::jsonb;
--- PRINT_LAYOUT --
+--## PRINT_LAYOUT
+select now() as time, 'PRINT_LAYOUT TABLE ALTER ENDS' as msg;
+---------------------------------------------------------------------------
 
--- PRINT_TEMPLATE --
+---------------------------------------------------------------------------
+select now() as time, 'PRINT_TEMPLATE TABLE ALTER START' as msg;
+--## PRINT_TEMPLATE
 update print_template
 set layout = 'STOCK_JOURNAL'
 where layout = 'STOCK_DEDUCTION';
 --##
 alter table print_template
     rename column type to mode;
--- PRINT_TEMPLATE --
+--## PRINT_TEMPLATE
+select now() as time, 'PRINT_TEMPLATE TABLE ALTER ENDS' as msg;
+---------------------------------------------------------------------------
 
---NEW TABLE--
-
--- SEQUENCE --
+---------------------------------------------------------------------------
+select now() as time, 'SEQUENCE TABLE ALTER START' as msg;
+--## SEQUENCE
 drop table if exists sequence;
 --##
 create table sequence (
@@ -1231,8 +1352,11 @@ select 'batch', coalesce(max(id), 0)
 from batch
 on conflict (model_name)
 do update set seq = excluded.seq;
+--## SEQUENCE
+select now() as time, 'SEQUENCE TABLE ALTER ENDS' as msg;
+---------------------------------------------------------------------------
 
-
+---------------------------------------------------------------------------
 select now() as time, 'general_migration_end' as msg;
 
 -------------------------------------------------------------------------------------------------
@@ -1242,6 +1366,8 @@ select now() as time, 'general_migration_end' as msg;
 --## BATCH
 -- field related changes
 alter table batch drop column if exists section_id;
+alter table batch drop column if exists inventory_category_id;
+alter table batch drop column if exists inventory_sub_category_id;
 alter table batch drop column if exists manufacturer_id;
 --
 update batch
@@ -1259,7 +1385,6 @@ set batch_no = b.batch_no || '-' || b.id::text
 from a
 where b.id = any (a.ids);
 --##
--- alter table batch rename column category1_id to section_id;
 -- uuid related changes
 select now() as time, 'UUID_CHANGES FOR BATCH STARTS' as msg;
 ALTER TABLE batch ADD COLUMN IF NOT EXISTS vendor_uuid uuid;
@@ -1267,200 +1392,70 @@ ALTER TABLE batch ADD COLUMN IF NOT EXISTS branch_uuid uuid;
 ALTER TABLE batch ADD COLUMN IF NOT EXISTS inventory_uuid uuid;
 ALTER TABLE batch ADD COLUMN IF NOT EXISTS manufacturer_id uuid;
 ALTER TABLE batch ADD COLUMN IF NOT EXISTS section_id uuid;
+ALTER TABLE batch ADD COLUMN IF NOT EXISTS inventory_category_id uuid;
+ALTER TABLE batch ADD COLUMN IF NOT EXISTS inventory_sub_category_id uuid;
 ALTER TABLE batch ADD COLUMN IF NOT EXISTS unit_uuid uuid;
 ALTER TABLE batch ADD COLUMN IF NOT EXISTS voucher_uuid uuid;
 ALTER TABLE batch ADD COLUMN IF NOT EXISTS warehouse_uuid uuid;
-------------------
-/*
-create index on batch (vendor_id, vendor_uuid, id);
-DO
-$$
-    DECLARE
-        v_updated   INT;
-        v_remaining BIGINT;
-    BEGIN
-        LOOP
-            UPDATE batch i
-            SET vendor_uuid = a.uuid_id
-            FROM account a
-            WHERE a.id = i.vendor_id
-              AND i.vendor_uuid IS NULL
-              AND i.id IN (SELECT id
-                           FROM batch
-                           WHERE vendor_uuid IS NULL
-                           LIMIT 10000);
-
-            GET DIAGNOSTICS v_updated = ROW_COUNT;
-            select count(1)
-            into v_remaining
-            from batch
-            where vendor_uuid is null;
-            RAISE NOTICE 'Updated: %', v_updated;
-            RAISE NOTICE 'Remaining: %', v_remaining;
-            EXIT WHEN v_updated = 0;
-        END LOOP;
-    END
-$$;
-*/
+ALTER TABLE batch ADD COLUMN IF NOT EXISTS division_uuid uuid;
+ALTER TABLE batch ADD COLUMN IF NOT EXISTS inv_retail_qty int;
+--##
+select now() as time, 'UUID_CHANGES FOR BATCH vendor_id STARTS' as msg;
 create index on batch (vendor_id);
 UPDATE batch b SET vendor_uuid = a.uuid_id FROM account a WHERE a.id = b.vendor_id;
-------------------
-/*
-create index on batch (branch_id, branch_uuid, id);
-DO
-$$
-    DECLARE
-        v_updated   INT;
-        v_remaining BIGINT;
-    BEGIN
-        LOOP
-            UPDATE batch i
-            SET branch_uuid = a.uuid_id
-            FROM branch a
-            WHERE a.id = i.branch_id
-              AND i.branch_uuid IS NULL
-              AND i.id IN (SELECT id
-                           FROM batch
-                           WHERE branch_uuid IS NULL
-                           LIMIT 10000);
-
-            GET DIAGNOSTICS v_updated = ROW_COUNT;
-            select count(1)
-            into v_remaining
-            from batch
-            where branch_uuid is null;
-            RAISE NOTICE 'Updated: %', v_updated;
-            RAISE NOTICE 'Remaining: %', v_remaining;
-            EXIT WHEN v_updated = 0;
-        END LOOP;
-    END
-$$;
-*/
+select now() as time, 'UUID_CHANGES FOR BATCH vendor_id ENDS' as msg;
+--##
+select now() as time, 'UUID_CHANGES FOR BATCH branch_id STARTS' as msg;
 create index on batch (branch_id);
 UPDATE batch b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
-------------------
-/*
-create index on batch (inventory_id, inventory_uuid, id);
-DO
-$$
-    DECLARE
-        v_updated   INT;
-        v_remaining BIGINT;
-    BEGIN
-        LOOP
-            UPDATE batch i
-            SET inventory_uuid  = a.uuid_id,
-                section_id      = a.section_id,
-                manufacturer_id = a.manufacturer_id
-            FROM inventory a
-            WHERE a.id = i.inventory_id
-              AND i.inventory_uuid IS NULL
-              AND i.id IN (SELECT id
-                           FROM batch
-                           WHERE inventory_uuid IS NULL
-                           LIMIT 10000);
-
-            GET DIAGNOSTICS v_updated = ROW_COUNT;
-            select count(1)
-            into v_remaining
-            from batch
-            where inventory_uuid is null;
-            RAISE NOTICE 'Updated: %', v_updated;
-            RAISE NOTICE 'Remaining: %', v_remaining;
-            EXIT WHEN v_updated = 0;
-        END LOOP;
-    END
-$$;
-*/
+select now() as time, 'UUID_CHANGES FOR BATCH branch_id ENDS' as msg;
+--##
+select now() as time, 'UUID_CHANGES FOR BATCH inv_id, sec_id, inv_cat_id, inv_sub_cat_id manu_id STARTS' as msg;
 create index on batch (inventory_id);
-------------------
+UPDATE batch b
+    SET inventory_uuid            = a.uuid_id,
+        section_id                = a.section_id,
+        inventory_category_id     = a.inventory_category_id,
+        inventory_sub_category_id = a.inventory_sub_category_id,
+        manufacturer_id           = a.manufacturer_id,
+        inv_retail_qty            = a.retail_qty
+    FROM inventory a WHERE a.id = b.inventory_id;
+select now() as time, 'UUID_CHANGES FOR BATCH inv_id, sec_id, inv_cat_id, inv_sub_cat_id manu_id ENDS' as msg;
+--##
+select now() as time, 'UNIT_CONV ASSIGN FOR BATCH STARTS' as msg;
+update batch b
+    set unit_conv = case when b.is_retail_qty then 1 else b.retail_qty end;
+select now() as time, 'UNIT_CONV ASSIGN FOR BATCH ENDS' as msg;
+--##
+select now() as time, 'UNIT_UUID ASSIGN FOR BATCH STARTS' as msg;
 update batch b
     set unit_uuid = u.conversion_unit_id
         from unit_conversion u
             where u.conversion = b.unit_conv;
-------------------
-UPDATE batch b
-    SET inventory_uuid = a.uuid_id,
-        section_id = a.section_id,
-        manufacturer_id = a.manufacturer_id
-    FROM inventory a WHERE a.id = b.inventory_id;
+select now() as time, 'UNIT_UUID ASSIGN FOR BATCH ENDS' as msg;
 --##
-update batch b
-    set unit_conv = case when b.is_retail_qty then 1 else b.retail_qty end;
-------------------
 alter table batch alter column unit_conv set not null;
-------------------
-/*
-create index on batch (voucher_id, voucher_uuid, id);
-DO
-$$
-    DECLARE
-        v_updated   INT;
-        v_remaining BIGINT;
-    BEGIN
-        LOOP
-            UPDATE batch i
-            SET voucher_uuid = a.session
-            FROM voucher a
-            WHERE a.id = i.voucher_id
-              AND i.voucher_uuid IS NULL
-              AND i.id IN (SELECT id
-                           FROM batch
-                           WHERE voucher_uuid IS NULL
-                           LIMIT 10000);
-
-            GET DIAGNOSTICS v_updated = ROW_COUNT;
-            select count(1)
-            into v_remaining
-            from batch
-            where voucher_uuid is null;
-            RAISE NOTICE 'Updated: %', v_updated;
-            RAISE NOTICE 'Remaining: %', v_remaining;
-            EXIT WHEN v_updated = 0;
-        END LOOP;
-    END
-$$;
-*/
+--##
+select now() as time, 'UUID_CHANGES FOR BATCH VOUCHER_ID STARTS' as msg;
 create index on batch (voucher_id);
-UPDATE batch b SET voucher_uuid = a.session FROM voucher a WHERE a.id = b.voucher_id;
-------------------
-/*
-create index on batch (warehouse_id, warehouse_uuid, id);
-DO
-$$
-    DECLARE
-        v_updated   INT;
-        v_remaining BIGINT;
-    BEGIN
-        LOOP
-            UPDATE batch i
-            SET warehouse_uuid = a.uuid_id
-            FROM warehouse a
-            WHERE a.id = i.warehouse_id
-              AND i.warehouse_uuid IS NULL
-              AND i.id IN (SELECT id
-                           FROM batch
-                           WHERE warehouse_uuid IS NULL
-                           LIMIT 10000);
-
-            GET DIAGNOSTICS v_updated = ROW_COUNT;
-            select count(1)
-            into v_remaining
-            from batch
-            where warehouse_uuid is null;
-            RAISE NOTICE 'Updated: %', v_updated;
-            RAISE NOTICE 'Remaining: %', v_remaining;
-            EXIT WHEN v_updated = 0;
-        END LOOP;
-    END
-$$;
-*/
+UPDATE batch b SET voucher_uuid = a.uuid_id FROM voucher a WHERE a.id = b.voucher_id;
+select now() as time, 'UUID_CHANGES FOR BATCH VOUCHER_ID ENDS' as msg;
+--##
+select now() as time, 'UUID_CHANGES FOR BATCH WAREHOUSE_ID STARTS' as msg;
 create index on batch (warehouse_id);
 UPDATE batch b SET warehouse_uuid = a.uuid_id FROM warehouse a WHERE a.id = b.warehouse_id;
-------------------
+select now() as time, 'UUID_CHANGES FOR BATCH WAREHOUSE_ID ENDS' as msg;
+--##
+select now() as time, 'UUID_CHANGES FOR BATCH DIVISION_ID STARTS' as msg;
+create index on batch (division_id);
+UPDATE batch b SET division_uuid = a.uuid_id FROM division a WHERE a.id = b.division_id;
+select now() as time, 'UUID_CHANGES FOR BATCH DIVISION_ID ENDS' as msg;
+--##
 select now() as time, 'UUID_CHANGES FOR BATCH ENDS' as msg;
 --## BATCH
+---------------------------------------------------------------------------
 
+---------------------------------------------------------------------------
 --## VOUCHER
 select now() as time, 'UUID_CHANGES FOR VOUCHER STARTS' as msg;
 -- voucher field related changes
@@ -1493,7 +1488,23 @@ alter table voucher
     add if not exists udf_approved                 bool,
     add if not exists branch_uuid                  uuid,
     add if not exists voucher_type_uuid            uuid,
+    add if not exists udf_pos_counter_session_id   uuid,
+    add if not exists udf_pos_counter_settlement_id uuid,
+    add if not exists udf_customer_mobile          text,
+    add if not exists udf_reminder_date            date,
     add if not exists udf_doctor_id                uuid;
+--##
+alter table voucher rename pos_counter_code to udf_pos_counter_code;
+--##
+UPDATE voucher v
+set udf_pos_counter_session_id = b.uuid_id
+from udm_pos_session b
+where v.pos_counter_session_id = b.id;
+--##
+UPDATE voucher v
+set udf_pos_counter_settlement_id = b.uuid_id
+from udm_pos_counter_settlement b
+where v.pos_counter_settlement_id = b.id;
 --##
 UPDATE voucher v
 SET branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
@@ -1548,7 +1559,7 @@ SET warehouse_id            = w.uuid_id,
     warehouse_name          = b.warehouse_name,
     udf_alt_branch_id       = br.uuid_id,
     udf_alt_warehouse_id    = w.uuid_id,
-    udf_transfer_voucher_id = tv.session,
+    udf_transfer_voucher_id = tv.uuid_id,
     udf_approved            = b.approved,
     branch_uuid             = br.uuid_id,
     voucher_type_uuid       = vt.uuid_id
@@ -1632,6 +1643,8 @@ SET branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
     sales_person_id        = sp.uuid_id,
     branch_uuid            = br.uuid_id,
     voucher_type_uuid      = vt.uuid_id,
+    udf_customer_mobile    = a.mobile,
+    udf_reminder_date      = b.date + b.reminder_days,
     udf_doctor_id          = ud.uuid_id
 FROM sale_bill b
     LEFT JOIN warehouse w     ON w.id = b.warehouse_id
@@ -1667,6 +1680,7 @@ FROM sale_quotation b
     LEFT JOIN branch br   ON br.id = b.branch_id
     LEFT JOIN voucher_type vt on vt.id = b.voucher_type_id
 WHERE v.id = b.voucher_id;
+
 --##
 alter table voucher
     alter column mode set not null,
@@ -1674,100 +1688,23 @@ alter table voucher
     alter column eway_bill_details type jsonb using eway_bill_details::jsonb;
 ------------------
 select now() as time, 'UUID_CHANGES FOR VOUCHER BRANCH_ID STARTS' as msg;
-/*
-create index on voucher (branch_id, branch_uuid, id);
-DO
-$$
-    DECLARE
-        v_updated   INT;
-        v_remaining BIGINT;
-    BEGIN
-        LOOP
-            UPDATE voucher i
-            SET branch_uuid = a.uuid_id
-            FROM branch a
-            WHERE a.id = i.branch_id
-              AND i.branch_uuid IS NULL
-              AND i.id IN (SELECT id
-                           FROM voucher
-                           WHERE branch_uuid IS NULL
-                           LIMIT 10000);
-
-            GET DIAGNOSTICS v_updated = ROW_COUNT;
-            select count(1)
-            into v_remaining
-            from voucher
-            where branch_uuid is null;
-            RAISE NOTICE 'Updated: %', v_updated;
-            RAISE NOTICE 'Remaining: %', v_remaining;
-            EXIT WHEN v_updated = 0;
-        END LOOP;
-    END
-$$;
-*/
-create index on voucher (branch_id);
-UPDATE voucher b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
+create index on voucher (branch_id, branch_uuid);
+UPDATE voucher b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id and branch_uuid is null;
 select now() as time, 'UUID_CHANGES FOR VOUCHER BRANCH_ID ENDS' as msg;
-------------------
-select now() as time, 'UUID_CHANGES FOR VOUCHER VOUCHER_TYPE_ID STARTS' as msg;
-/*
-CREATE INDEX ON voucher (voucher_type_id);
-    UPDATE voucher b SET voucher_type_uuid = '01955427-0c00-703c-8000-000000000000' WHERE b.voucher_type_id = 1;
-    UPDATE voucher b SET voucher_type_uuid = '0195594d-6800-703d-8000-000000000000' WHERE b.voucher_type_id = 2;
-    UPDATE voucher b SET voucher_type_uuid = '01955e73-c400-703e-8000-000000000000' WHERE b.voucher_type_id = 3;
-    UPDATE voucher b SET voucher_type_uuid = '0195639a-2000-703f-8000-000000000000' WHERE b.voucher_type_id = 4;
-    UPDATE voucher b SET voucher_type_uuid = '019568c0-7c00-7040-8000-000000000000' WHERE b.voucher_type_id = 5;
-    UPDATE voucher b SET voucher_type_uuid = '01956de6-d800-7041-8000-000000000000' WHERE b.voucher_type_id = 6;
-    UPDATE voucher b SET voucher_type_uuid = '0195730d-3400-7042-8000-000000000000' WHERE b.voucher_type_id = 7;
-    UPDATE voucher b SET voucher_type_uuid = '01957833-9000-7043-8000-000000000000' WHERE b.voucher_type_id = 8;
-    UPDATE voucher b SET voucher_type_uuid = '01957d59-ec00-7044-8000-000000000000' WHERE b.voucher_type_id = 9;
-    UPDATE voucher b SET voucher_type_uuid = '01958280-4800-7045-8000-000000000000' WHERE b.voucher_type_id = 10;
-    UPDATE voucher b SET voucher_type_uuid = '019587a6-a400-7046-8000-000000000000' WHERE b.voucher_type_id = 17;
-    UPDATE voucher b SET voucher_type_uuid = '01958ccd-0000-7047-8000-000000000000' WHERE b.voucher_type_id = 21;
-    UPDATE voucher b SET voucher_type_uuid = '019591f3-5c00-7048-8000-000000000000' WHERE b.voucher_type_id = 23;
-create index on voucher (voucher_type_id, voucher_type_uuid, id);
-DO
-$$
-    DECLARE
-        v_updated   INT;
-        v_remaining BIGINT;
-    BEGIN
-        LOOP
-            UPDATE voucher i
-            SET voucher_type_uuid = a.uuid_id
-            FROM voucher_type a
-            WHERE a.id = i.voucher_type_id
-              AND i.voucher_type_uuid IS NULL
-              AND i.id IN (SELECT id
-                           FROM voucher
-                           WHERE voucher_type_uuid IS NULL
-                           LIMIT 10000);
-
-            GET DIAGNOSTICS v_updated = ROW_COUNT;
-            select count(1)
-            into v_remaining
-            from voucher
-            where voucher_type_uuid is null;
-            RAISE NOTICE 'Updated: %', v_updated;
-            RAISE NOTICE 'Remaining: %', v_remaining;
-            EXIT WHEN v_updated = 0;
-        END LOOP;
-    END
-$$;
-*/
-create index on voucher (voucher_type_id);
-UPDATE voucher b SET voucher_type_uuid = a.uuid_id FROM voucher_type a WHERE a.id = b.voucher_type_id;
+--##
 select now() as time, 'UUID_CHANGES FOR VOUCHER VOUCHER_TYPE_ID ENDS' as msg;
+create index on voucher (voucher_type_id, voucher_type_uuid);
+UPDATE voucher b SET voucher_type_uuid = a.uuid_id FROM voucher_type a WHERE a.id = b.voucher_type_id and voucher_type_uuid is null;
+--##
 select now() as time, 'UUID_CHANGES FOR VOUCHER ENDS' as msg;
 ------------------
 --## VOUCHER
+---------------------------------------------------------------------------
 
--------------------------------------------------------------------------------------------------
----- APPLY UUID for ac_txn, inv_txn
--------------------------------------------------------------------------------------------------
-
+---------------------------------------------------------------------------
 --## AC_TXN
 select now() as time, 'UUID_CHANGES FOR AC_TXN STARTS' as msg;
+create index on gst_txn (ac_txn_id);
 -- ac_txn field related changes
 alter table ac_txn
     add if not exists qty            float,
@@ -1806,253 +1743,33 @@ ALTER TABLE ac_txn ADD COLUMN IF NOT EXISTS account_type_uuid uuid;
 ALTER TABLE ac_txn ADD COLUMN IF NOT EXISTS branch_uuid uuid;
 ALTER TABLE ac_txn ADD COLUMN IF NOT EXISTS voucher_uuid uuid;
 ALTER TABLE ac_txn ADD COLUMN IF NOT EXISTS voucher_type_uuid uuid;
-------------------
+--##
 select now() as time, 'UUID_CHANGES FOR AC_TXN ACCOUNT_TYPE_ID AND ACCOUNT_ID STARTS' as msg;
-/*
-    UPDATE ac_txn b SET account_uuid = '0194af5b-8c00-701c-8000-000000000000', account_type_uuid = '01947bdb-f400-7012-8000-000000000000' WHERE b.account_id = 1;
-    UPDATE ac_txn b SET account_uuid = '0194b481-e800-701d-8000-000000000000', account_type_uuid = '01943e0f-a400-7006-8000-000000000000' WHERE b.account_id = 2;
-    UPDATE ac_txn b SET account_uuid = '0194b9a8-4400-701e-8000-000000000000', account_type_uuid = '01944d82-b800-7009-8000-000000000000' WHERE b.account_id = 3;
-    UPDATE ac_txn b SET account_uuid = '0194bece-a000-701f-8000-000000000000', account_type_uuid = '0194959b-c000-7017-8000-000000000000' WHERE b.account_id = 4;
-    UPDATE ac_txn b SET account_uuid = '0194c3f4-fc00-7020-8000-000000000000', account_type_uuid = '0194959b-c000-7017-8000-000000000000' WHERE b.account_id = 5;
-    UPDATE ac_txn b SET account_uuid = '0194c91b-5800-7021-8000-000000000000', account_type_uuid = '0194959b-c000-7017-8000-000000000000' WHERE b.account_id = 6;
-    UPDATE ac_txn b SET account_uuid = '0194ce41-b400-7022-8000-000000000000', account_type_uuid = '0194959b-c000-7017-8000-000000000000' WHERE b.account_id = 7;
-    UPDATE ac_txn b SET account_uuid = '0194d368-1000-7023-8000-000000000000', account_type_uuid = '0194959b-c000-7017-8000-000000000000' WHERE b.account_id = 8;
-    UPDATE ac_txn b SET account_uuid = '0194d88e-6c00-7024-8000-000000000000', account_type_uuid = '0194959b-c000-7017-8000-000000000000' WHERE b.account_id = 9;
-    UPDATE ac_txn b SET account_uuid = '0194ddb4-c800-7025-8000-000000000000', account_type_uuid = '0194959b-c000-7017-8000-000000000000' WHERE b.account_id = 10;
-    UPDATE ac_txn b SET account_uuid = '0194e2db-2400-7026-8000-000000000000', account_type_uuid = '0194959b-c000-7017-8000-000000000000' WHERE b.account_id = 11;
-    UPDATE ac_txn b SET account_uuid = '0194e801-8000-7027-8000-000000000000', account_type_uuid = '019438e9-4800-7005-8000-000000000000' WHERE b.account_id = 12;
-    UPDATE ac_txn b SET account_uuid = '0194ed27-dc00-7028-8000-000000000000', account_type_uuid = '0194485c-5c00-7008-8000-000000000000' WHERE b.account_id = 13;
-    UPDATE ac_txn b SET account_uuid = '0194f24e-3800-7029-8000-000000000000', account_type_uuid = '019438e9-4800-7005-8000-000000000000' WHERE b.account_id = 14;
-    UPDATE ac_txn b SET account_uuid = '0194f774-9400-702a-8000-000000000000', account_type_uuid = '01942e9c-9000-7003-8000-000000000000' WHERE b.account_id = 15;
-    UPDATE ac_txn b SET account_uuid = '0194fc9a-f000-702b-8000-000000000000', account_type_uuid = '0194621c-2800-700d-8000-000000000000' WHERE b.account_id = 16;
-    UPDATE ac_txn b SET account_uuid = '019501c1-4c00-702c-8000-000000000000', account_type_uuid = '01942e9c-9000-7003-8000-000000000000' WHERE b.account_id = 17;
-    UPDATE ac_txn b SET account_uuid = '019506e7-a800-702d-8000-000000000000', account_type_uuid = '019438e9-4800-7005-8000-000000000000' WHERE b.account_id = 18;
-    UPDATE ac_txn b SET account_uuid = '01950c0e-0400-702e-8000-000000000000', account_type_uuid = '019433c2-ec00-7004-8000-000000000000' WHERE b.account_id = 19;
-    UPDATE ac_txn b SET account_uuid = '01951134-6000-702f-8000-000000000000', account_type_uuid = '01949fe8-7800-7019-8000-000000000000' WHERE b.account_id = 20;
-------------------
-create index on ac_txn(account_id, account_uuid, id);
-DO
-$$
-    DECLARE
-        v_updated   INT;
-        v_remaining BIGINT;
-    BEGIN
-        LOOP
-            UPDATE ac_txn i
-            SET account_uuid = a.uuid_id,
-                account_type_uuid = a.account_type_uuid
-            FROM account a
-            WHERE a.id = i.account_id
-              AND a.transaction_enabled
-              AND i.account_uuid IS NULL
-              AND i.id IN (SELECT id
-                           FROM ac_txn
-                           WHERE account_uuid IS NULL
-                           LIMIT 10000);
-
-            GET DIAGNOSTICS v_updated = ROW_COUNT;
-            select count(1)
-            into v_remaining
-            from ac_txn
-            where account_uuid is null;
-            RAISE NOTICE 'Updated: %', v_updated;
-            RAISE NOTICE 'Remaining: %', v_remaining;
-            EXIT WHEN v_updated = 0;
-        END LOOP;
-    END
-$$;
-*/
 UPDATE ac_txn b SET account_uuid = a.uuid_id, account_type_uuid = a.account_type_uuid FROM account a WHERE a.id = b.account_id;
 select now() as time, 'UUID_CHANGES FOR AC_TXN ACCOUNT_TYPE_ID AND ACCOUNT_ID ENDS' as msg;
-------------------
+--##
 select now() as time, 'UUID_CHANGES FOR AC_TXN ALT_ACCOUNT_ID STARTS' as msg;
-/*
-create index on ac_txn(alt_account_id);
-    UPDATE ac_txn b SET alt_account_uuid = '0194af5b-8c00-701c-8000-000000000000' WHERE b.alt_account_id = 1;
-    UPDATE ac_txn b SET alt_account_uuid = '0194b481-e800-701d-8000-000000000000' WHERE b.alt_account_id = 2;
-    UPDATE ac_txn b SET alt_account_uuid = '0194b9a8-4400-701e-8000-000000000000' WHERE b.alt_account_id = 3;
-    UPDATE ac_txn b SET alt_account_uuid = '0194bece-a000-701f-8000-000000000000' WHERE b.alt_account_id = 4;
-    UPDATE ac_txn b SET alt_account_uuid = '0194c3f4-fc00-7020-8000-000000000000' WHERE b.alt_account_id = 5;
-    UPDATE ac_txn b SET alt_account_uuid = '0194c91b-5800-7021-8000-000000000000' WHERE b.alt_account_id = 6;
-    UPDATE ac_txn b SET alt_account_uuid = '0194ce41-b400-7022-8000-000000000000' WHERE b.alt_account_id = 7;
-    UPDATE ac_txn b SET alt_account_uuid = '0194d368-1000-7023-8000-000000000000' WHERE b.alt_account_id = 8;
-    UPDATE ac_txn b SET alt_account_uuid = '0194d88e-6c00-7024-8000-000000000000' WHERE b.alt_account_id = 9;
-    UPDATE ac_txn b SET alt_account_uuid = '0194ddb4-c800-7025-8000-000000000000' WHERE b.alt_account_id = 10;
-    UPDATE ac_txn b SET alt_account_uuid = '0194e2db-2400-7026-8000-000000000000' WHERE b.alt_account_id = 11;
-    UPDATE ac_txn b SET alt_account_uuid = '0194e801-8000-7027-8000-000000000000' WHERE b.alt_account_id = 12;
-    UPDATE ac_txn b SET alt_account_uuid = '0194ed27-dc00-7028-8000-000000000000' WHERE b.alt_account_id = 13;
-    UPDATE ac_txn b SET alt_account_uuid = '0194f24e-3800-7029-8000-000000000000' WHERE b.alt_account_id = 14;
-    UPDATE ac_txn b SET alt_account_uuid = '0194f774-9400-702a-8000-000000000000' WHERE b.alt_account_id = 15;
-    UPDATE ac_txn b SET alt_account_uuid = '0194fc9a-f000-702b-8000-000000000000' WHERE b.alt_account_id = 16;
-    UPDATE ac_txn b SET alt_account_uuid = '019501c1-4c00-702c-8000-000000000000' WHERE b.alt_account_id = 17;
-    UPDATE ac_txn b SET alt_account_uuid = '019506e7-a800-702d-8000-000000000000' WHERE b.alt_account_id = 18;
-    UPDATE ac_txn b SET alt_account_uuid = '01950c0e-0400-702e-8000-000000000000' WHERE b.alt_account_id = 19;
-    UPDATE ac_txn b SET alt_account_uuid = '01951134-6000-702f-8000-000000000000' WHERE b.alt_account_id = 20;
-------------------
-create index on ac_txn(alt_account_id, alt_account_uuid, id);
-DO
-$$
-    DECLARE
-        v_updated   INT;
-        v_remaining BIGINT;
-    BEGIN
-        LOOP
-            UPDATE ac_txn i
-            SET alt_account_uuid = a.uuid_id
-            FROM account a
-            WHERE a.id = i.alt_account_id
-              AND a.transaction_enabled
-              AND i.alt_account_uuid IS NULL
-              AND i.id IN (SELECT id
-                           FROM ac_txn
-                           WHERE alt_account_uuid IS NULL
-                           LIMIT 10000);
-
-            GET DIAGNOSTICS v_updated = ROW_COUNT;
-            select count(1)
-            into v_remaining
-            from ac_txn
-            where alt_account_uuid is null;
-            RAISE NOTICE 'Updated: %', v_updated;
-            RAISE NOTICE 'Remaining: %', v_remaining;
-            EXIT WHEN v_updated = 0;
-        END LOOP;
-    END
-$$;
-*/
--- create index on ac_txn (alt_account_id);
--- UPDATE ac_txn b SET alt_account_uuid = a.uuid_id FROM account a WHERE a.id = b.alt_account_id;
+UPDATE ac_txn b SET alt_account_uuid = a.uuid_id FROM account a WHERE a.id = b.alt_account_id;
 select now() as time, 'UUID_CHANGES FOR AC_TXN ALT_ACCOUNT_ID ENDS' as msg;
-------------------
+--##
+select now() as time, 'UUID_CHANGES FOR AC_TXN VOUCHER_ID, voucher_type_uuid, branch_uuid STARTS' as msg;
+UPDATE ac_txn b SET voucher_uuid = a.uuid_id, voucher_type_uuid = a.voucher_type_uuid, branch_uuid = a.branch_uuid  FROM voucher a WHERE a.id = b.voucher_id;
+select now() as time, 'UUID_CHANGES FOR AC_TXN VOUCHER_ID, voucher_type_uuid, branch_uuid ENDS' as msg;
+--##
 select now() as time, 'UUID_CHANGES FOR AC_TXN BRANCH_ID STARTS' as msg;
-/*
-create index on ac_txn (branch_id, branch_uuid, id);
-DO
-$$
-    DECLARE
-        v_updated   INT;
-        v_remaining BIGINT;
-    BEGIN
-        LOOP
-            UPDATE ac_txn i
-            SET branch_uuid = a.uuid_id
-            FROM branch a
-            WHERE a.id = i.branch_id
-              AND i.branch_uuid IS NULL
-              AND i.id IN (SELECT id
-                           FROM ac_txn
-                           WHERE branch_uuid IS NULL
-                           LIMIT 10000);
-
-            GET DIAGNOSTICS v_updated = ROW_COUNT;
-            select count(1)
-            into v_remaining
-            from ac_txn
-            where branch_uuid is null;
-            RAISE NOTICE 'Updated: %', v_updated;
-            RAISE NOTICE 'Remaining: %', v_remaining;
-            EXIT WHEN v_updated = 0;
-        END LOOP;
-    END
-$$;
-*/
-create index on ac_txn (branch_id);
-UPDATE ac_txn b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
+create index on ac_txn (branch_id, branch_uuid);
+UPDATE ac_txn b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id and branch_uuid is null;
 select now() as time, 'UUID_CHANGES FOR AC_TXN BRANCH_ID ENDS' as msg;
-------------------
-select now() as time, 'UUID_CHANGES FOR AC_TXN VOUCHER_ID STARTS' as msg;
-/*
-create index on ac_txn (voucher_id, voucher_uuid, id);
-DO
-$$
-    DECLARE
-        v_updated   INT;
-        v_remaining BIGINT;
-    BEGIN
-        LOOP
-            UPDATE ac_txn i
-            SET voucher_uuid = a.session
-            FROM voucher a
-            WHERE a.id = i.voucher_id
-              AND i.voucher_uuid IS NULL
-              AND i.id IN (SELECT id
-                           FROM ac_txn
-                           WHERE voucher_uuid IS NULL
-                           LIMIT 10000);
-
-            GET DIAGNOSTICS v_updated = ROW_COUNT;
-            select count(1)
-            into v_remaining
-            from ac_txn
-            where voucher_uuid is null;
-            RAISE NOTICE 'Updated: %', v_updated;
-            RAISE NOTICE 'Remaining: %', v_remaining;
-            EXIT WHEN v_updated = 0;
-        END LOOP;
-    END
-$$;
-*/
-create index on ac_txn (voucher_id);
-UPDATE ac_txn b SET voucher_uuid = a.session FROM voucher a WHERE a.id = b.voucher_id;
-select now() as time, 'UUID_CHANGES FOR AC_TXN VOUCHER_ID ENDS' as msg;
-------------------
-select now() as time, 'UUID_CHANGES FOR AC_TXN VOUCHER_TYPE_ID STARTS' as msg;
-/*
-CREATE INDEX ON ac_txn (voucher_type_id);
-    UPDATE ac_txn b SET voucher_type_uuid = '01955427-0c00-703c-8000-000000000000' WHERE b.voucher_type_id = 1;
-    UPDATE ac_txn b SET voucher_type_uuid = '0195594d-6800-703d-8000-000000000000' WHERE b.voucher_type_id = 2;
-    UPDATE ac_txn b SET voucher_type_uuid = '01955e73-c400-703e-8000-000000000000' WHERE b.voucher_type_id = 3;
-    UPDATE ac_txn b SET voucher_type_uuid = '0195639a-2000-703f-8000-000000000000' WHERE b.voucher_type_id = 4;
-    UPDATE ac_txn b SET voucher_type_uuid = '019568c0-7c00-7040-8000-000000000000' WHERE b.voucher_type_id = 5;
-    UPDATE ac_txn b SET voucher_type_uuid = '01956de6-d800-7041-8000-000000000000' WHERE b.voucher_type_id = 6;
-    UPDATE ac_txn b SET voucher_type_uuid = '0195730d-3400-7042-8000-000000000000' WHERE b.voucher_type_id = 7;
-    UPDATE ac_txn b SET voucher_type_uuid = '01957833-9000-7043-8000-000000000000' WHERE b.voucher_type_id = 8;
-    UPDATE ac_txn b SET voucher_type_uuid = '01957d59-ec00-7044-8000-000000000000' WHERE b.voucher_type_id = 9;
-    UPDATE ac_txn b SET voucher_type_uuid = '01958280-4800-7045-8000-000000000000' WHERE b.voucher_type_id = 10;
-    UPDATE ac_txn b SET voucher_type_uuid = '019587a6-a400-7046-8000-000000000000' WHERE b.voucher_type_id = 17;
-    UPDATE ac_txn b SET voucher_type_uuid = '01958ccd-0000-7047-8000-000000000000' WHERE b.voucher_type_id = 21;
-    UPDATE ac_txn b SET voucher_type_uuid = '019591f3-5c00-7048-8000-000000000000' WHERE b.voucher_type_id = 23;
-------------------
-create index on ac_txn (voucher_type_id, voucher_type_uuid, id);
-DO
-$$
-    DECLARE
-        v_updated   INT;
-        v_remaining BIGINT;
-    BEGIN
-        LOOP
-            UPDATE ac_txn i
-            SET voucher_type_uuid = a.uuid_id
-            FROM voucher_type a
-            WHERE a.id = i.voucher_type_id
-              AND i.voucher_type_uuid IS NULL
-              AND i.id IN (SELECT id
-                           FROM ac_txn
-                           WHERE voucher_type_uuid IS NULL
-                           LIMIT 10000);
-
-            GET DIAGNOSTICS v_updated = ROW_COUNT;
-            select count(1)
-            into v_remaining
-            from ac_txn
-            where voucher_type_uuid is null;
-            RAISE NOTICE 'Updated: %', v_updated;
-            RAISE NOTICE 'Remaining: %', v_remaining;
-            EXIT WHEN v_updated = 0;
-        END LOOP;
-    END
-$$;
-*/
-create index on ac_txn (voucher_type_id);
-UPDATE ac_txn b SET voucher_type_uuid = a.uuid_id FROM voucher_type a WHERE a.id = b.voucher_type_id;
-select now() as time, 'UUID_CHANGES FOR AC_TXN VOUCHER_TYPE_ID ENDS' as msg;
-------------------
 --## AC_TXN
+---------------------------------------------------------------------------
 
+---------------------------------------------------------------------------
 --## INV_TXN
 select now() as time, 'UUID_CHANGES FOR INV_TXN STARTS' as msg;
 -- inv_txn field related changes
 alter table inv_txn drop column if exists section_id;
+alter table inv_txn drop column if exists inventory_category_id;
+alter table inv_txn drop column if exists inventory_sub_category_id;
 alter table inv_txn drop column if exists manufacturer_id;
 --
 alter table inv_txn
@@ -2084,36 +1801,57 @@ alter table inv_txn
     add if not exists cess_on_val              float,
     add if not exists customer_id              uuid,
     add if not exists sales_person_id          uuid,
-    add if not exists dummy                    bool,
+    add if not exists inventory_uuid           uuid,
+    add if not exists branch_uuid              uuid,
+    add if not exists voucher_uuid             uuid,
+    add if not exists voucher_type_uuid        uuid,
+    add if not exists warehouse_uuid           uuid,
     add if not exists section_id               uuid,
+    add if not exists inventory_category_id    uuid,
+    add if not exists inventory_sub_category_id uuid,
     add if not exists manufacturer_id          uuid,
     add if not exists free_qty                 float,
     add if not exists vendor_uuid              uuid,
-    add if not exists udf_drug_classifications int[];
+    add if not exists division_uuid            uuid,
+    add if not exists udf_reminder_date        date,
+    add if not exists udf_drug_classifications uuid[];
 --##
+select now() as time, 'inv_txn set udf_reminder_date from sale_bill STARTS' as msg;
 update inv_txn t
-set sno                 = i.sno,
-    qty                 = i.qty,
-    rate                = i.rate,
-    unit_id             = uc.conversion_unit_id,
-    unit_conv           = case when i.is_retail_qty then 1 else inv.retail_qty end,
-    rate_tax_inclusive  = true,
-    gst_tax             = i.gst_tax,
-    disc_mode1          = i.disc_mode,
-    discount1           = i.discount,
-    hsn_code            = i.hsn_code,
-    cess_on_qty         = i.cess_on_qty,
-    cess_on_val         = i.cess_on_val,
-    batch_no            = b.batch_no,
-    vendor_uuid         = b.vendor_uuid,
-    section_id          = inv.section_id,
-    manufacturer_id     = inv.manufacturer_id
-from credit_note_inv_item i
-    left join inventory inv on inv.id = i.inventory_id
-         left join unit_conversion uc on uc.conversion = case when i.is_retail_qty then 1 else inv.retail_qty end
-         left join batch b on b.id = i.batch_id
-where t.id = i.id;
+set udf_reminder_date = i.date + i.reminder_days
+from sale_bill i
+    where i.voucher_id = t.voucher_id
+    and i.reminder_days is not null;
+select now() as time, 'inv_txn set udf_reminder_date from sale_bill ENDS' as msg;
 --##
+select now() as time, 'inv_txn set data from credit_note_inv_item STARTS' as msg;
+update inv_txn t
+set sno                         = i.sno,
+    qty                         = i.qty,
+    rate                        = i.rate,
+    unit_id                     = uc.conversion_unit_id,
+    unit_conv                   = case when i.is_retail_qty then 1 else b.inv_retail_qty end,
+    rate_tax_inclusive          = true,
+    gst_tax                     = i.gst_tax,
+    disc_mode1                  = i.disc_mode,
+    discount1                   = i.discount,
+    hsn_code                    = i.hsn_code,
+    cess_on_qty                 = i.cess_on_qty,
+    cess_on_val                 = i.cess_on_val,
+    batch_no                    = b.batch_no,
+    vendor_uuid                 = b.vendor_uuid,
+    inventory_uuid              = b.inventory_uuid,
+    section_id                  = b.section_id,
+    inventory_category_id       = b.inventory_category_id,
+    inventory_sub_category_id   = b.inventory_sub_category_id,
+    manufacturer_id             = b.manufacturer_id
+from credit_note_inv_item i
+         left join batch b on b.id = i.batch_id
+         left join unit_conversion uc on uc.conversion = case when i.is_retail_qty then 1 else b.inv_retail_qty end
+where t.id = i.id;
+select now() as time, 'inv_txn set data from credit_note_inv_item END' as msg;
+--##
+select now() as time, 'inv_txn set customer from credit_note STARTS' as msg;
 UPDATE inv_txn t
 SET customer_id = a.uuid_id
 FROM credit_note b
@@ -2121,120 +1859,147 @@ LEFT JOIN account a ON a.id = b.customer_id
     WHERE t.voucher_id = b.voucher_id
   AND b.customer_id IS NOT NULL;
 --##
+select now() as time, 'inv_txn set customer from credit_note end' as msg;
+--##
+select now() as time, 'inv_txn set data from debit_note_inv_item start' as msg;
 update inv_txn t
-set sno                 = i.sno,
-    qty                 = i.qty,
-    rate                = i.rate,
-    unit_id             = uc.conversion_unit_id,
-    unit_conv           = case when i.is_retail_qty then 1 else inv.retail_qty end,
-    gst_tax             = i.gst_tax,
-    disc_mode1          = i.disc1_mode,
-    discount1           = i.discount1,
-    disc_mode2          = i.disc2_mode,
-    discount2           = i.discount2,
-    rate_tax_inclusive  = false,
-    hsn_code            = i.hsn_code,
-    cess_on_qty         = i.cess_on_qty,
-    cess_on_val         = i.cess_on_val,
-    batch_no            = b.batch_no,
-    vendor_uuid         = b.vendor_uuid,
-    section_id          = inv.section_id,
-    manufacturer_id     = inv.manufacturer_id
+set sno                         = i.sno,
+    qty                         = i.qty,
+    rate                        = i.rate,
+    unit_id                     = uc.conversion_unit_id,
+    unit_conv                   = case when i.is_retail_qty then 1 else b.inv_retail_qty end,
+    gst_tax                     = i.gst_tax,
+    disc_mode1                  = i.disc1_mode,
+    discount1                   = i.discount1,
+    disc_mode2                  = i.disc2_mode,
+    discount2                   = i.discount2,
+    rate_tax_inclusive          = false,
+    hsn_code                    = i.hsn_code,
+    cess_on_qty                 = i.cess_on_qty,
+    cess_on_val                 = i.cess_on_val,
+    batch_no                    = b.batch_no,
+    inventory_uuid              = b.inventory_uuid,
+    vendor_uuid                 = b.vendor_uuid,
+    section_id                  = b.section_id,
+    inventory_category_id       = b.inventory_category_id,
+    inventory_sub_category_id   = b.inventory_sub_category_id,
+    manufacturer_id             = b.manufacturer_id
 from debit_note_inv_item i
-    left join inventory inv on inv.id = i.inventory_id
-         left join unit_conversion uc on uc.conversion = case when i.is_retail_qty then 1 else inv.retail_qty end
          left join batch b on b.id = i.batch_id
+         left join unit_conversion uc on uc.conversion = case when i.is_retail_qty then 1 else b.inv_retail_qty end
 where t.id = i.id;
+select now() as time, 'inv_txn set data from debit_note_inv_item end' as msg;
 --##
+select now() as time, 'inv_txn set data from personal_use_purchase_inv_item start' as msg;
 update inv_txn t
-set vendor_uuid = a.uuid_id,
-    vendor_name = b.vendor_name
-from debit_note b
-    left join account a on a.id = b.vendor_id
-where b.vendor_id is not null
-  and t.voucher_id = b.voucher_id;
---##
-update inv_txn t
-set sno               = i.sno,
-    qty               = i.qty,
-    rate              = i.cost,
-    unit_id           = uc.conversion_unit_id,
-    unit_conv         = case when i.is_retail_qty then 1 else inv.retail_qty end,
-    gst_tax           = i.gst_tax,
-    hsn_code          = i.hsn_code,
-    cess_on_qty       = i.cess_on_qty,
-    cess_on_val       = i.cess_on_val,
-    batch_no          = b.batch_no,
-    vendor_uuid       = b.vendor_uuid,
-    section_id        = inv.section_id,
-    manufacturer_id   = inv.manufacturer_id
+set sno                         = i.sno,
+    qty                         = i.qty,
+    rate                        = i.cost,
+    unit_id                     = uc.conversion_unit_id,
+    unit_conv                   = case when i.is_retail_qty then 1 else b.inv_retail_qty end,
+    gst_tax                     = i.gst_tax,
+    hsn_code                    = i.hsn_code,
+    cess_on_qty                 = i.cess_on_qty,
+    cess_on_val                 = i.cess_on_val,
+    batch_no                    = b.batch_no,
+    vendor_uuid                 = b.vendor_uuid,
+    inventory_uuid              = b.inventory_uuid,
+    section_id                  = b.section_id,
+    inventory_category_id       = b.inventory_category_id,
+    inventory_sub_category_id   = b.inventory_sub_category_id,
+    manufacturer_id             = b.manufacturer_id
 from personal_use_purchase_inv_item i
-    left join inventory inv on inv.id = i.inventory_id
-         left join unit_conversion uc on uc.conversion = case when i.is_retail_qty then 1 else inv.retail_qty end
          left join batch b on b.id = i.batch_id
+         left join unit_conversion uc on uc.conversion = case when i.is_retail_qty then 1 else b.inv_retail_qty end
 where t.id = i.id;
+select now() as time, 'inv_txn set data from personal_use_purchase_inv_item end' as msg;
 --##
+select now() as time, 'inv_txn set data from purchase_bill_inv_item start' as msg;
 update inv_txn t
-set sno              = i.sno,
-    qty              = i.qty,
-    rate             = i.rate,
-    p_rate           = i.rate,
-    unit_id          = uc.conversion_unit_id,
-    unit_conv        = case when i.is_retail_qty then 1 else inv.retail_qty end,
-    gst_tax          = i.gst_tax,
-    disc_mode1       = i.disc1_mode,
-    discount1        = i.discount1,
-    disc_mode2       = i.disc2_mode,
-    discount2        = i.discount2,
-    hsn_code         = i.hsn_code,
-    cess_on_qty      = i.cess_on_qty,
-    cess_on_val      = i.cess_on_val,
-    batch_no         = b.batch_no,
-    vendor_uuid      = b.vendor_uuid,
-    section_id       = inv.section_id,
-    manufacturer_id  = inv.manufacturer_id,
-    free_qty         = i.free_qty
+set sno                         = i.sno,
+    qty                         = i.qty,
+    rate                        = i.rate,
+    p_rate                      = i.rate,
+    unit_id                     = uc.conversion_unit_id,
+    unit_conv                   = case when i.is_retail_qty then 1 else b.inv_retail_qty end,
+    gst_tax                     = i.gst_tax,
+    disc_mode1                  = i.disc1_mode,
+    discount1                   = i.discount1,
+    disc_mode2                  = i.disc2_mode,
+    discount2                   = i.discount2,
+    hsn_code                    = i.hsn_code,
+    cess_on_qty                 = i.cess_on_qty,
+    cess_on_val                 = i.cess_on_val,
+    inventory_uuid              = b.inventory_uuid,
+    section_id                  = b.section_id,
+    inventory_category_id       = b.inventory_category_id,
+    inventory_sub_category_id   = b.inventory_sub_category_id,
+    manufacturer_id             = b.manufacturer_id,
+    free_qty                    = i.free_qty,
+    batch_no                    = b.batch_no,
+    vendor_uuid                 = b.vendor_uuid,
+    s_rate                      = b.s_rate,
+    mrp                         = b.mrp,
+    expiry                      = b.expiry,
+    nlc                         = b.nlc,
+    landing_cost                = b.landing_cost,
+    cost                        = b.cost
 from purchase_bill_inv_item i
-    left join inventory inv on inv.id = i.inventory_id
-         left join unit_conversion uc on uc.conversion = case when i.is_retail_qty then 1 else inv.retail_qty end
-         left join batch b on b.txn_id = i.id
+    left join batch b on b.txn_id = i.id
+    left join unit_conversion uc on uc.conversion = case when i.is_retail_qty then 1 else b.inv_retail_qty end
 where t.id = i.id;
 --##
-update inv_txn t
-set vendor_uuid    = vid.uuid_id,
-    vendor_name   = b.vendor_name,
-    customer_id   = cid.uuid_id
-from purchase_bill b
-    left join account cid on cid.id = b.customer_id
-    left join account vid on vid.id = b.vendor_id
-where t.voucher_id = b.voucher_id;
+select now() as time, 'inv_txn set data from purchase_bill_inv_item end' as msg;
 --##
---##
+select now() as time, 'inv_txn set data from sale_bill_inv_item start' as msg;
 update inv_txn t
-set sno                      = i.sno,
-    qty                      = i.qty,
-    rate                     = i.rate,
-    unit_id                  = uc.conversion_unit_id,
-    unit_conv                = case when i.is_retail_qty then 1 else inv.retail_qty end,
-    gst_tax                  = i.gst_tax,
-    disc_mode1               = i.disc_mode,
-    discount1                = i.discount,
-    hsn_code                 = i.hsn_code,
-    cess_on_qty              = i.cess_on_qty,
-    cess_on_val              = i.cess_on_val,
-    sales_person_id          = sp.uuid_id,
-    udf_drug_classifications = i.drug_classifications,
-    batch_no                 = b.batch_no,
-    vendor_uuid              = b.vendor_uuid,
-    section_id               = inv.section_id,
-    manufacturer_id          = inv.manufacturer_id
+set sno                         = i.sno,
+    qty                         = i.qty,
+    rate                        = i.rate,
+    unit_id                     = uc.conversion_unit_id,
+    unit_conv                   = case when i.is_retail_qty then 1 else b.inv_retail_qty end,
+    gst_tax                     = i.gst_tax,
+    disc_mode1                  = i.disc_mode,
+    discount1                   = i.discount,
+    hsn_code                    = i.hsn_code,
+    cess_on_qty                 = i.cess_on_qty,
+    cess_on_val                 = i.cess_on_val,
+    sales_person_id             = sp.uuid_id,
+    batch_no                    = b.batch_no,
+    vendor_uuid                 = b.vendor_uuid,
+    inventory_uuid              = b.inventory_uuid,
+    section_id                  = b.section_id,
+    inventory_category_id       = b.inventory_category_id,
+    inventory_sub_category_id   = b.inventory_sub_category_id,
+    manufacturer_id             = b.manufacturer_id
 from sale_bill_inv_item i
-    left join inventory inv on inv.id = i.inventory_id
-    left join unit_conversion uc on uc.conversion = case when i.is_retail_qty then 1 else inv.retail_qty end
     left join batch b on b.id = i.batch_id
+    left join unit_conversion uc on uc.conversion = case when i.is_retail_qty then 1 else b.inv_retail_qty end
     left join sales_person sp on sp.id = i.s_inc_id
 where t.id = i.id;
 --##
+--/*
+select now() as time, 'inv_txn set drug_classifications from sale_bill_inv_item start' as msg;
+WITH a AS (
+    SELECT drug_classifications, id
+    FROM sale_bill_inv_item
+    WHERE date > '2026-02-01'
+      AND array_length(drug_classifications, 1) > 0
+)
+UPDATE inv_txn t
+SET udf_drug_classifications = (
+        SELECT array_agg(d.uuid_id)
+        FROM udm_drug_classification d
+        WHERE d.id = ANY(a.drug_classifications)
+    )
+FROM a
+WHERE t.id = a.id;
+select now() as time, 'inv_txn set drug_classifications from sale_bill_inv_item end' as msg;
+--*/
+--##
+select now() as time, 'inv_txn set data from sale_bill_inv_item end' as msg;
+--##
+select now() as time, 'inv_txn set customer from sale_bill start' as msg;
 update inv_txn t
 set customer_id   = cid.uuid_id
 from sale_bill b
@@ -2242,40 +2007,63 @@ from sale_bill b
 where b.customer_id is not null
   and t.voucher_id = b.voucher_id;
 --##
+select now() as time, 'inv_txn set customer from sale_bill end' as msg;
+--##
+select now() as time, 'inv_txn set data from stock_journal_inv_item start' as msg;
 update inv_txn t
-set sno               = i.sno,
-    qty               = i.qty,
-    rate              = i.rate,
-    unit_id           = uc.conversion_unit_id,
-    unit_conv         = case when i.is_retail_qty then 1 else inv.retail_qty end,
-    barcode           = i.barcode,
-    asset_amount      = i.asset_amount,
-    batch_no          = b.batch_no,
-    vendor_uuid       = b.vendor_uuid,
-    section_id        = inv.section_id,
-    manufacturer_id   = inv.manufacturer_id
+set sno                         = i.sno,
+    qty                         = i.qty,
+    rate                        = i.rate,
+    unit_id                     = uc.conversion_unit_id,
+    unit_conv                   = case when i.is_retail_qty then 1 else b.inv_retail_qty end,
+    barcode                     = i.barcode,
+    asset_amount                = i.asset_amount,
+    batch_no                    = b.batch_no,
+    vendor_uuid                 = b.vendor_uuid,
+    s_rate                      = b.s_rate,
+    mrp                         = b.mrp,
+    expiry                      = b.expiry,
+    nlc                         = b.nlc,
+    landing_cost                = b.landing_cost,
+    cost                        = b.cost,
+    section_id                  = b.section_id,
+    inventory_category_id       = b.inventory_category_id,
+    inventory_sub_category_id   = b.inventory_sub_category_id,
+    inventory_uuid              = b.inventory_uuid,
+    manufacturer_id             = b.manufacturer_id
 from stock_journal_inv_item i
-    left join inventory inv on inv.id = i.inventory_id
-         left join unit_conversion uc on uc.conversion = case when i.is_retail_qty then 1 else inv.retail_qty end
-         left join batch b on b.id = i.batch_id
+         left join batch b on b.id = i.batch_id or b.txn_id = i.id
+         left join unit_conversion uc on uc.conversion = case when i.is_retail_qty then 1 else b.inv_retail_qty end
 where t.id = i.id;
 --##
+select now() as time, 'inv_txn set data from stock_journal_inv_item end' as msg;
+--##
+select now() as time, 'inv_txn set data from inv_opening start' as msg;
 update inv_txn t
-set sno               = i.sno,
-    unit_id           = uc.conversion_unit_id,
-    unit_conv         = case when i.is_retail_qty then 1 else inv.retail_qty end,
-    qty               = i.qty,
-    rate              = i.rate,
-    asset_amount      = i.asset_amount,
-    batch_no          = b.batch_no,
-    vendor_uuid       = b.vendor_uuid,
-    section_id        = inv.section_id,
-    manufacturer_id   = inv.manufacturer_id
+set sno                         = i.sno,
+    unit_id                     = uc.conversion_unit_id,
+    unit_conv                   = case when i.is_retail_qty then 1 else b.inv_retail_qty end,
+    qty                         = i.qty,
+    rate                        = i.rate,
+    asset_amount                = i.asset_amount,
+    batch_no                    = b.batch_no,
+    vendor_uuid                 = b.vendor_uuid,
+    s_rate                      = b.s_rate,
+    mrp                         = b.mrp,
+    expiry                      = b.expiry,
+    nlc                         = b.nlc,
+    landing_cost                = b.landing_cost,
+    cost                        = b.cost,
+    inventory_uuid              = b.inventory_uuid,
+    section_id                  = b.section_id,
+    inventory_category_id       = b.inventory_category_id,
+    inventory_sub_category_id   = b.inventory_sub_category_id,
+    manufacturer_id             = b.manufacturer_id
 from inventory_opening i
-    left join inventory inv on inv.id = i.inventory_id
-         left join unit_conversion uc on uc.conversion = case when i.is_retail_qty then 1 else inv.retail_qty end
          left join batch b on b.txn_id = i.id
+         left join unit_conversion uc on uc.conversion = case when i.is_retail_qty then 1 else b.inv_retail_qty end
 where t.id = i.id;
+select now() as time, 'inv_txn set data from inv_opening end' as msg;
 --##
 alter table inv_txn
     alter column sno set not null,
@@ -2285,300 +2073,73 @@ alter table inv_txn
     alter column rate set not null,
     alter column inward set not null,
     alter column outward set not null;
--- inv_txn uuid related changes
-ALTER TABLE inv_txn ADD COLUMN IF NOT EXISTS branch_uuid uuid;
-ALTER TABLE inv_txn ADD COLUMN IF NOT EXISTS inventory_uuid uuid;
-ALTER TABLE inv_txn ADD COLUMN IF NOT EXISTS voucher_uuid uuid;
-ALTER TABLE inv_txn ADD COLUMN IF NOT EXISTS voucher_type_uuid uuid;
-ALTER TABLE inv_txn ADD COLUMN IF NOT EXISTS warehouse_uuid uuid;
-ALTER TABLE inv_txn ADD COLUMN IF NOT EXISTS udf_drug_classifications_uuid uuid[];
-------------------
-select now() as time, 'UUID_CHANGES FOR INV_TXN VENDOR_ID STARTS' as msg;
-/*
-create index on inv_txn (vendor_id, vendor_uuid, id);
-DO
-$$
-    DECLARE
-        v_updated   INT;
-        v_remaining BIGINT;
-    BEGIN
-        LOOP
-            UPDATE inv_txn i
-            SET vendor_uuid = a.uuid_id
-            FROM account a
-            WHERE a.id = i.vendor_id
-              AND a.account_type_id = 19
-              AND i.vendor_uuid IS NULL
-              AND i.id IN (SELECT id
-                           FROM inv_txn
-                           WHERE vendor_uuid IS NULL
-                           LIMIT 10000);
-
-            GET DIAGNOSTICS v_updated = ROW_COUNT;
-            select count(1)
-            into v_remaining
-            from inv_txn
-            where vendor_uuid is null;
-            RAISE NOTICE 'Updated: %', v_updated;
-            RAISE NOTICE 'Remaining: %', v_remaining;
-            EXIT WHEN v_updated = 0;
-        END LOOP;
-    END
-$$;
-*/
-create index on inv_txn (vendor_id);
-UPDATE inv_txn b SET vendor_uuid = a.uuid_id FROM account a WHERE a.id = b.vendor_id;
-select now() as time, 'UUID_CHANGES FOR INV_TXN VENDOR_ID ENDS' as msg;
 ------------------
 select now() as time, 'UUID_CHANGES FOR INV_TXN BRANCH_ID STARTS' as msg;
-/*
-create index on inv_txn (branch_id, branch_uuid, id);
-DO
-$$
-    DECLARE
-        v_updated   INT;
-        v_remaining BIGINT;
-    BEGIN
-        LOOP
-            UPDATE inv_txn i
-            SET branch_uuid = a.uuid_id
-            FROM branch a
-            WHERE a.id = i.branch_id
-              AND i.branch_uuid IS NULL
-              AND i.id IN (SELECT id
-                           FROM inv_txn
-                           WHERE branch_uuid IS NULL
-                           LIMIT 10000);
-
-            GET DIAGNOSTICS v_updated = ROW_COUNT;
-            select count(1)
-            into v_remaining
-            from inv_txn
-            where branch_uuid is null;
-            RAISE NOTICE 'Updated: %', v_updated;
-            RAISE NOTICE 'Remaining: %', v_remaining;
-            EXIT WHEN v_updated = 0;
-        END LOOP;
-    END
-$$;
-*/
 create index on inv_txn (branch_id);
 UPDATE inv_txn b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
 select now() as time, 'UUID_CHANGES FOR INV_TXN BRANCH_ID ENDS' as msg;
 ------------------
-select now() as time, 'UUID_CHANGES FOR INV_TXN INVENTORY_ID STARTS' as msg;
-/*
-create index on inv_txn (inventory_id, inventory_uuid, id);
-DO
-$$
-    DECLARE
-        v_updated   INT;
-        v_remaining BIGINT;
-    BEGIN
-        LOOP
-            UPDATE inv_txn i
-            SET inventory_uuid = a.uuid_id
-            FROM inventory a
-            WHERE a.id = i.inventory_id
-              AND i.inventory_uuid IS NULL
-              AND i.id IN (SELECT id
-                           FROM inv_txn
-                           WHERE inventory_uuid IS NULL
-                           LIMIT 10000);
-
-            GET DIAGNOSTICS v_updated = ROW_COUNT;
-            select count(1)
-            into v_remaining
-            from inv_txn
-            where inventory_uuid is null;
-            RAISE NOTICE 'Updated: %', v_updated;
-            RAISE NOTICE 'Remaining: %', v_remaining;
-            EXIT WHEN v_updated = 0;
-        END LOOP;
-    END
-$$;
-*/
-create index on inv_txn (inventory_id);
-UPDATE inv_txn b SET inventory_uuid = a.uuid_id FROM inventory a WHERE a.id = b.inventory_id;
-select now() as time, 'UUID_CHANGES FOR INV_TXN INVENTORY_ID ENDS' as msg;
-------------------
-select now() as time, 'UUID_CHANGES FOR INV_TXN VOUCHER_ID STARTS' as msg;
-/*
-create index on inv_txn (voucher_id, voucher_uuid, id);
-DO
-$$
-    DECLARE
-        v_updated   INT;
-        v_remaining BIGINT;
-    BEGIN
-        LOOP
-            UPDATE inv_txn i
-            SET voucher_uuid = a.session
-            FROM voucher a
-            WHERE a.id = i.voucher_id
-              AND i.voucher_uuid IS NULL
-              AND i.id IN (SELECT id
-                           FROM inv_txn
-                           WHERE voucher_uuid IS NULL
-                           LIMIT 10000);
-
-            GET DIAGNOSTICS v_updated = ROW_COUNT;
-            select count(1)
-            into v_remaining
-            from inv_txn
-            where voucher_uuid is null;
-            RAISE NOTICE 'Updated: %', v_updated;
-            RAISE NOTICE 'Remaining: %', v_remaining;
-            EXIT WHEN v_updated = 0;
-        END LOOP;
-    END
-$$;
-*/
+select now() as time, 'UUID_CHANGES FOR INV_TXN VOUCHER_ID, voucher_type_uuid STARTS' as msg;
 create index on inv_txn (voucher_id);
-UPDATE inv_txn b SET voucher_uuid = a.session FROM voucher a WHERE a.id = b.voucher_id;
-select now() as time, 'UUID_CHANGES FOR INV_TXN VOUCHER_ID ENDS' as msg;
-------------------
-select now() as time, 'UUID_CHANGES FOR INV_TXN VOUCHER_TYPE_ID STARTS' as msg;
-----------------------
-/*
-create index on inv_txn (voucher_type_id);
-    UPDATE inv_txn b SET voucher_type_uuid = '01955427-0c00-703c-8000-000000000000' WHERE b.voucher_type_id = 1;
-    UPDATE inv_txn b SET voucher_type_uuid = '0195594d-6800-703d-8000-000000000000' WHERE b.voucher_type_id = 2;
-    UPDATE inv_txn b SET voucher_type_uuid = '01955e73-c400-703e-8000-000000000000' WHERE b.voucher_type_id = 3;
-    UPDATE inv_txn b SET voucher_type_uuid = '0195639a-2000-703f-8000-000000000000' WHERE b.voucher_type_id = 4;
-    UPDATE inv_txn b SET voucher_type_uuid = '019568c0-7c00-7040-8000-000000000000' WHERE b.voucher_type_id = 5;
-    UPDATE inv_txn b SET voucher_type_uuid = '01956de6-d800-7041-8000-000000000000' WHERE b.voucher_type_id = 6;
-    UPDATE inv_txn b SET voucher_type_uuid = '0195730d-3400-7042-8000-000000000000' WHERE b.voucher_type_id = 7;
-    UPDATE inv_txn b SET voucher_type_uuid = '01957833-9000-7043-8000-000000000000' WHERE b.voucher_type_id = 8;
-    UPDATE inv_txn b SET voucher_type_uuid = '01957d59-ec00-7044-8000-000000000000' WHERE b.voucher_type_id = 9;
-    UPDATE inv_txn b SET voucher_type_uuid = '01958280-4800-7045-8000-000000000000' WHERE b.voucher_type_id = 10;
-    UPDATE inv_txn b SET voucher_type_uuid = '019587a6-a400-7046-8000-000000000000' WHERE b.voucher_type_id = 17;
-    UPDATE inv_txn b SET voucher_type_uuid = '01958ccd-0000-7047-8000-000000000000' WHERE b.voucher_type_id = 21;
-    UPDATE inv_txn b SET voucher_type_uuid = '019591f3-5c00-7048-8000-000000000000' WHERE b.voucher_type_id = 23;
-----------------------
-create index on inv_txn (voucher_type_id, voucher_type_uuid, id);
-
-DO
-$$
-    DECLARE
-        v_updated   INT;
-        v_remaining BIGINT;
-    BEGIN
-        LOOP
-            UPDATE inv_txn i
-            SET voucher_type_uuid = a.uuid_id
-            FROM voucher_type a
-            WHERE a.id = i.voucher_type_id
-              AND i.voucher_type_uuid IS NULL
-              AND i.id IN (SELECT id
-                           FROM inv_txn
-                           WHERE voucher_type_uuid IS NULL
-                           LIMIT 10000);
-
-            GET DIAGNOSTICS v_updated = ROW_COUNT;
-            select count(1)
-            into v_remaining
-            from inv_txn
-            where voucher_type_uuid is null;
-            RAISE NOTICE 'Updated: %', v_updated;
-            RAISE NOTICE 'Remaining: %', v_remaining;
-            EXIT WHEN v_updated = 0;
-        END LOOP;
-    END
-$$;
-*/
-create index on inv_txn (voucher_type_id);
-UPDATE inv_txn b SET voucher_type_uuid = a.uuid_id FROM voucher_type a WHERE a.id = b.voucher_type_id;
-select now() as time, 'UUID_CHANGES FOR INV_TXN VOUCHER_TYPE_ID ENDS' as msg;
+UPDATE inv_txn b SET voucher_uuid = a.uuid_id, voucher_type_uuid = a.voucher_type_uuid FROM voucher a WHERE a.id = b.voucher_id;
+select now() as time, 'UUID_CHANGES FOR INV_TXN VOUCHER_ID, voucher_type_uuid ENDS' as msg;
 ------------------
 select now() as time, 'UUID_CHANGES FOR INV_TXN WAREHOUSE_ID STARTS' as msg;
-/*
-create index on inv_txn (warehouse_id, warehouse_uuid, id);
-DO
-$$
-    DECLARE
-        v_updated   INT;
-        v_remaining BIGINT;
-    BEGIN
-        LOOP
-            UPDATE inv_txn i
-            SET warehouse_uuid = a.uuid_id
-            FROM warehouse a
-            WHERE a.id = i.warehouse_id
-              AND i.warehouse_uuid IS NULL
-              AND i.id IN (SELECT id
-                           FROM inv_txn
-                           WHERE warehouse_uuid IS NULL
-                           LIMIT 10000);
-
-            GET DIAGNOSTICS v_updated = ROW_COUNT;
-            select count(1)
-            into v_remaining
-            from inv_txn
-            where warehouse_uuid is null;
-            RAISE NOTICE 'Updated: %', v_updated;
-            RAISE NOTICE 'Remaining: %', v_remaining;
-            EXIT WHEN v_updated = 0;
-        END LOOP;
-    END
-$$;
-*/
 create index on inv_txn (warehouse_id);
 UPDATE inv_txn b SET warehouse_uuid = a.uuid_id FROM warehouse a WHERE a.id = b.warehouse_id;
 select now() as time, 'UUID_CHANGES FOR INV_TXN WAREHOUSE_ID ENDS' as msg;
 ------------------
---
-select now() as time, 'UUID_CHANGES FOR INV_TXN DRUG_CLASSIFICATION_ID STARTS' as msg;
-UPDATE inv_txn t
-        SET udf_drug_classifications_uuid =
-                (SELECT array_agg(udm_drug_classification.uuid_id)
-                 FROM unnest(t.udf_drug_classifications) AS u(class_id)
-                          JOIN udm_drug_classification
-                               ON udm_drug_classification.id = u.class_id)
-        WHERE t.udf_drug_classifications IS NOT NULL;
-select now() as time, 'UUID_CHANGES FOR INV_TXN DRUG_CLASSIFICATION_ID ENDS' as msg;
---
+select now() as time, 'UUID_CHANGES FOR INV_TXN DIVISION_ID STARTS' as msg;
+create index on inv_txn (division_id);
+UPDATE inv_txn b SET division_uuid = a.uuid_id FROM division a WHERE a.id = b.division_id;
+select now() as time, 'UUID_CHANGES FOR INV_TXN DIVISION_ID ENDS' as msg;
 ------------------
-select now() as time, 'UUID_CHANGES FOR INV_TXN BATCH_ID STARTS' as msg;
-create index on inv_txn (batch_id);
-DO
-$$
-    DECLARE
-        v_updated   INT;
-        v_remaining BIGINT;
-    BEGIN
-        LOOP
-            UPDATE inv_txn i
-            SET batch_no     = a.batch_no,
-                s_rate       = a.s_rate,
-                mrp          = a.mrp,
-                vendor_id    = a.vendor_id,
-                expiry       = a.expiry,
-                nlc          = a.nlc,
-                landing_cost = a.landing_cost,
-                cost         = a.cost,
-                dummy        = true
-            FROM batch a
-            WHERE a.id = i.batch_id
-              AND i.batch_id IN (SELECT batch_id
-                           FROM inv_txn
-                           WHERE dummy is null
-                           LIMIT 10000);
-
-            GET DIAGNOSTICS v_updated = ROW_COUNT;
-            select count(1)
-            into v_remaining
-            from inv_txn
-            where dummy is null;
-            RAISE NOTICE 'Updated: %', v_updated;
-            RAISE NOTICE 'Remaining: %', v_remaining;
-            EXIT WHEN v_updated = 0;
-        END LOOP;
-    END
-$$;
 alter table inv_txn alter column batch_no set not null;
-select now() as time, 'UUID_CHANGES FOR INV_TXN BATCH_ID ENDS' as msg;
 --## INV_TXN
+---------------------------------------------------------------------------
+
+---------------------------------------------------------------------------
+--## BILL_ALLOCATION
+alter table bill_allocation
+    add if not exists new_ref_no text;
+--##
+create index bill_allocation_pending
+    on bill_allocation (pending);
+--##
+with a as (select coalesce(nullif(upper(regexp_replace(ref_no, '\s+', '', 'g')), ''), voucher_no, '1') as no,
+                  array_agg(pending)                                                                   as pids
+           from bill_allocation
+           where ref_type = 'NEW'
+           group by account_id, branch_id,
+                    coalesce(nullif(upper(regexp_replace(ref_no, '\s+', '', 'g')), ''), voucher_no, '1'))
+update bill_allocation b
+set new_ref_no = a.no
+from a
+where b.pending = any (a.pids);
+--##
+alter table bill_allocation
+    rename ref_no to old_ref_no;
+--##
+alter table bill_allocation
+    rename new_ref_no to ref_no;
+--##
+select now() as time, 'UUID_CHANGES FOR BILL_ALLOCATION STARTS' as msg;
+-- bill_allocation field related changes
+alter table bill_allocation rename meta_data to metadata;
+alter table bill_allocation alter column metadata type jsonb using metadata::jsonb;
+alter table bill_allocation alter column sno type int using sno::int;
+-- bill_allocation uuid related changes
+ALTER TABLE bill_allocation ADD COLUMN IF NOT EXISTS account_uuid uuid;
+ALTER TABLE bill_allocation ADD COLUMN IF NOT EXISTS account_type_uuid uuid;
+ALTER TABLE bill_allocation ADD COLUMN IF NOT EXISTS branch_uuid uuid;
+ALTER TABLE bill_allocation ADD COLUMN IF NOT EXISTS voucher_uuid uuid;
+------------------
+    UPDATE bill_allocation b SET account_uuid = a.uuid_id, account_type_uuid = a.account_type_uuid FROM account a WHERE a.id = b.account_id;
+    UPDATE bill_allocation b SET branch_uuid = a.uuid_id FROM branch a WHERE a.id = b.branch_id;
+    UPDATE bill_allocation b SET voucher_uuid = a.uuid_id FROM voucher a WHERE a.id = b.voucher_id;
+select now() as time, 'UUID_CHANGES FOR BILL_ALLOCATION STARTS' as msg;
+--## BILL_ALLOCATION
+---------------------------------------------------------------------------
 
 -------------------------------------------------------------------------------------------------
 ---- DROP UNWANTED COLUMN, EXPRESSION, DEFAULT
@@ -2596,8 +2157,6 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table ac_txn drop column if exists inst_no;
     alter table ac_txn drop column if exists base_account_types;
 -- INV_TXN --
-    alter table inv_txn drop column if exists division_id;
-    alter table inv_txn drop column if exists division_name;
     alter table inv_txn drop column if exists party_id;
     alter table inv_txn drop column if exists party_name;
     alter table inv_txn drop column if exists vendor_name;
@@ -2606,6 +2165,7 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table inv_txn drop column if exists manufacturer_name;
     alter table inv_txn drop column if exists is_opening;
     alter table inv_txn drop column if exists inventory_voucher_id;
+    alter table inv_txn drop column if exists category1_id;
     alter table inv_txn drop column if exists category1_name;
     alter table inv_txn drop column if exists category2_id;
     alter table inv_txn drop column if exists category2_name;
@@ -2628,6 +2188,7 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table voucher drop column if exists approval_state;
     alter table voucher drop column if exists require_no_of_approval;
     alter table voucher drop column if exists pos_counter_session_id;
+    alter table voucher drop column if exists session;
     alter table voucher drop column if exists pos_counter_settlement_id;
 -- ACCOUNT_DAILY_SUMMARY --
     alter table account_daily_summary alter column amount drop expression;
@@ -2642,9 +2203,6 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table account drop column if exists is_commission_discounted;
     alter table account drop column if exists commission;
     alter table account drop column if exists aadhar_no;
-    alter table account drop column if exists alternate_mobile;
-    alter table account drop column if exists telephone;
-    alter table account drop column if exists contact_person;
     alter table account drop column if exists category1;
     alter table account drop column if exists category2;
     alter table account drop column if exists category3;
@@ -2662,12 +2220,6 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table account drop column if exists service_charge_non_gst_account_id;
     alter table account drop column if exists itc_ineligible;
     alter table account drop column if exists secondary_emails;
--- BANK --
-    alter table bank drop column if exists created_at;
-    alter table bank drop column if exists updated_at;
--- BANK_BENEFICIARY --
-    alter table bank_beneficiary drop column if exists bank_name;
-    alter table bank_beneficiary drop column if exists bank_code;
 -- BANK_TXN --
     alter table bank_txn alter column credit drop expression;
     alter table bank_txn alter column debit drop expression;
@@ -2680,7 +2232,6 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table bank_txn drop column if exists epayment_status;
     alter table bank_txn drop column if exists bank_ref_no;
     alter table bank_txn drop column if exists bank_particulars;
-    alter table bank_txn drop column if exists emailed;
 -- BATCH --
     alter table batch alter column p_rate drop expression;
     alter table batch alter column closing drop expression;
@@ -2689,8 +2240,6 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table batch drop column if exists inventory_hsn;
     alter table batch drop column if exists branch_name;
     alter table batch drop column if exists warehouse_name;
-    alter table batch drop column if exists division_id;
-    alter table batch drop column if exists division_name;
     alter table batch drop column if exists txn_id;
     alter table batch drop column if exists inventory_voucher_id;
     alter table batch drop column if exists opening_p_rate;
@@ -2706,9 +2255,11 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table batch drop column if exists category2_name;
     alter table batch drop column if exists category3_id;
     alter table batch drop column if exists category3_name;
+    alter table batch drop column if exists inv_retail_qty;
 -- BILL_ALLOCATION --
     alter table bill_allocation drop column if exists base_account_types;
 --     alter table bill_allocation drop column if exists pending;
+    alter table bill_allocation drop column if exists old_ref_no;
     alter table bill_allocation drop column if exists is_approved;
     alter table bill_allocation drop column if exists due_date;
     alter table bill_allocation drop column if exists account_type_name;
@@ -2716,7 +2267,6 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
 -- INVENTORY --
     alter table inventory alter column val_name drop expression;
     alter table inventory drop column if exists cess;
-    alter table inventory drop column if exists division_id;
     alter table inventory drop column if exists inventory_type;
     alter table inventory drop column if exists retail_qty;
     alter table inventory drop column if exists reorder_inventory_id;
@@ -2734,6 +2284,7 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table inventory drop column if exists apply_s_rate_from_master_for_sale;
     alter table inventory drop column if exists fitting_charge;
     alter table inventory drop column if exists itc_ineligible;
+    alter table inventory drop column if exists category1_id;
     alter table inventory drop column if exists category2_id;
     alter table inventory drop column if exists category3_id;
     alter table inventory drop column if exists category1_name;
@@ -2749,13 +2300,13 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table inventory_branch_detail drop column if exists s_disc;
     alter table inventory_branch_detail drop column if exists discount_1;
     alter table inventory_branch_detail drop column if exists discount_2;
+    alter table inventory_branch_detail drop column if exists division_id;
     alter table inventory_branch_detail drop column if exists preferred_vendor_name;
     alter table inventory_branch_detail drop column if exists last_vendor_name;
     alter table inventory_branch_detail drop column if exists s_customer_disc;
     alter table inventory_branch_detail drop column if exists p_rate_tax_inc;
     alter table inventory_branch_detail drop column if exists reorder_inventory_id;
     alter table inventory_branch_detail drop column if exists val_name;
-    alter table inventory_branch_detail drop column if exists division_id;
 -- MEMBER --
     alter table member drop column if exists user_id;
     alter table member drop column if exists role_id;
@@ -2769,12 +2320,26 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table tds_on_voucher alter column amount_after_tds_deduction drop expression;
     alter table tds_on_voucher drop column if exists branch_name;
     alter table tds_on_voucher drop column if exists pending_id;
+-- SECTION --
+    alter table section drop column if exists old_id;
+-- INVENTORY_CATEGORY --
+    alter table inventory_category drop column if exists old_id;
+-- INVENTORY_SUB_CATEGORY --
+    alter table inventory_sub_category drop column if exists old_id;
+-- UDM_POS_SESSION --
+    alter table udm_pos_session drop column if exists closed_by;
+    alter table udm_pos_session drop column if exists closed_by_id;
+-- UDM_POS_COUNTER_SETTLEMENT --
+    alter table udm_pos_counter_settlement drop column if exists created_by_id;
+    alter table udm_pos_counter_settlement drop column if exists opening;
+    alter table udm_pos_counter_settlement drop column if exists closing;
 -- changed_at removal --
     alter table account                 drop if exists changed_at;
     alter table account_type            drop if exists changed_at;
     alter table batch                   drop if exists changed_at;
     alter table branch                  drop if exists changed_at;
     alter table country                 drop if exists changed_at;
+    alter table division                drop if exists changed_at;
     alter table gst_registration        drop if exists changed_at;
     alter table inventory               drop if exists changed_at;
     alter table inventory_branch_detail drop if exists changed_at;
@@ -2798,7 +2363,6 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     drop table if exists dispatch_address;
     drop table if exists area;
     drop table if exists bill_of_material_component;
-    drop table if exists category;
     drop table if exists category_option;
     drop table if exists credit_note;
     drop table if exists credit_note_inv_item;
@@ -2818,7 +2382,6 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     drop table if exists delivery_note_inv_item;
     drop table if exists delivery_receipt;
     drop table if exists display_rack;
-    drop table if exists division;
     drop table if exists e_banking_log;
     drop table if exists eft_reconciliation_voucher;
     drop table if exists environment;
@@ -2839,13 +2402,10 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     drop table if exists personal_use_purchase_inv_item;
     drop table if exists personal_use_purchase;
     drop table if exists pos_offline_voucher;
-    drop table if exists pos_counter_session;
-    drop table if exists pos_counter_settlement;
     drop table if exists pos_server;
     drop table if exists power_bi;
     drop table if exists price_list_condition;
     drop table if exists price_list;
-    drop table if exists wanted_note;
     drop table if exists shipment;
     drop table if exists stock_journal;
     drop table if exists stock_journal_inv_item;
@@ -2862,17 +2422,17 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE END' as msg;
 -------------------------------------------------------------------------------------------------
 select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
 -- ACCOUNT
---     alter table account drop column if exists id;
---     alter table account rename column uuid_id to id;
---     alter table account alter column id set not null;
---     ALTER TABLE account ADD CONSTRAINT account_pkey PRIMARY KEY (id);
+    alter table account drop column if exists id;
+    alter table account rename column uuid_id to id;
+    alter table account alter column id set not null;
+    ALTER TABLE account ADD CONSTRAINT account_pkey PRIMARY KEY (id);
         --
         alter table ac_txn drop column if exists account_id;
         alter table ac_txn rename column account_uuid to account_id;
         alter table ac_txn alter column account_id set not null;
         --
---         alter table ac_txn drop column if exists alt_account_id;
---         alter table ac_txn rename column alt_account_uuid to alt_account_id;
+        alter table ac_txn drop column if exists alt_account_id;
+        alter table ac_txn rename column alt_account_uuid to alt_account_id;
         --
         alter table account_daily_summary drop column if exists account_id;
         alter table account_daily_summary rename column account_uuid to account_id;
@@ -2954,34 +2514,20 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         alter table bill_allocation drop column if exists account_type_id;
         alter table bill_allocation rename column account_type_uuid to account_type_id;
         alter table bill_allocation alter column account_type_id set not null;
--- BANK
-    alter table bank drop column if exists id;
-    alter table bank rename column uuid_id to id;
-    alter table bank alter column id set not null;
-    ALTER TABLE bank ADD CONSTRAINT bank_pkey PRIMARY KEY (id);
         --
         alter table account drop column if exists bank_id;
-        alter table account rename column bank_uuid to bank_id;
-        --
-        alter table bank_beneficiary drop column if exists bank_id;
-        alter table bank_beneficiary rename column bank_uuid to bank_id;
-        alter table bank_beneficiary alter column bank_id set not null;
--- BANK_BENEFICIARY
-    alter table bank_beneficiary drop column if exists id;
-    alter table bank_beneficiary rename column uuid_id to id;
-    alter table bank_beneficiary alter column id set not null;
-    ALTER TABLE bank_beneficiary ADD CONSTRAINT bank_beneficiary_pkey PRIMARY KEY (id);
+        alter table account add column if not exists bank_id uuid;
         --
         alter table account drop column if exists bank_beneficiary_id;
-        alter table account rename column bank_beneficiary_uuid to bank_beneficiary_id;
+        alter table account add column if not exists bank_beneficiary_id uuid;
 -- BRANCH
-    alter table branch alter column members drop not null;
     alter table branch drop column if exists id;
     alter table branch rename column uuid_id to id;
     alter table branch alter column id set not null;
     ALTER TABLE branch ADD CONSTRAINT branch_pkey PRIMARY KEY (id);
     alter table branch alter column misc type jsonb using misc::jsonb;
     alter table branch alter column configuration type jsonb using configuration::jsonb;
+    alter table branch alter column members drop not null;
         --
         alter table ac_txn drop column if exists branch_id;
         alter table ac_txn rename column branch_uuid to branch_id;
@@ -3026,6 +2572,27 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         alter table udm_pos_counter drop column if exists branch_id;
         alter table udm_pos_counter rename column branch_uuid to branch_id;
         alter table udm_pos_counter alter column branch_id set not null;
+        --
+        alter table udm_wanted_item drop column if exists branch_id;
+        alter table udm_wanted_item rename column branch_uuid to branch_id;
+        alter table udm_wanted_item alter column branch_id set not null;
+-- DIVISION
+    alter table division drop column if exists id;
+    alter table division rename column uuid_id to id;
+    alter table division alter column id set not null;
+    ALTER TABLE division ADD CONSTRAINT division_pkey PRIMARY KEY (id);
+        --
+        alter table batch drop column if exists division_id;
+        alter table batch rename column division_uuid to division_id;
+        alter table batch alter column division_id set not null;
+        --
+        alter table inv_txn drop column if exists division_id;
+        alter table inv_txn rename column division_uuid to division_id;
+        alter table inv_txn alter column division_id set not null;
+        --
+        alter table inventory drop column if exists division_id;
+        alter table inventory rename column division_uuid to division_id;
+        alter table inventory alter column division_id set not null;
 -- GST_REGISTRATION
     alter table gst_registration drop column if exists id;
     alter table gst_registration rename column uuid_id to id;
@@ -3044,9 +2611,6 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         alter table batch rename column inventory_uuid to inventory_id;
         alter table batch alter column inventory_id set not null;
         --
-        alter table bill_of_material drop column if exists inventory_id;
-        alter table bill_of_material rename column inventory_uuid to inventory_id;
-        alter table bill_of_material alter column inventory_id set not null;
         --
         alter table inv_txn drop column if exists inventory_id;
         alter table inv_txn rename column inventory_uuid to inventory_id;
@@ -3060,6 +2624,9 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         alter table udm_vendor_item_map drop column if exists inventory_id;
         alter table udm_vendor_item_map rename column inventory_uuid to inventory_id;
         alter table udm_vendor_item_map alter column inventory_id set not null;
+        --
+        alter table udm_wanted_item drop column if exists inventory_id;
+        alter table udm_wanted_item rename column inventory_uuid to inventory_id;
 -- MANUFACTURER
     alter table manufacturer drop column if exists id;
     alter table manufacturer rename column uuid_id to id;
@@ -3103,10 +2670,9 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         alter table inventory rename column purchase_unit_uuid to purchase_unit_id;
 -- VOUCHER
     alter table voucher drop column if exists id;
-    alter table voucher rename column session to id;
+    alter table voucher rename column uuid_id to id;
     alter table voucher alter column id set not null;
     ALTER TABLE voucher ADD CONSTRAINT voucher_pkey PRIMARY KEY (id);
-    alter table voucher drop constraint voucher_session_key;
         --
         alter table ac_txn drop column if exists voucher_id;
         alter table ac_txn rename column voucher_uuid to voucher_id;
@@ -3179,11 +2745,6 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         alter table voucher_numbering drop column if exists f_year_id;
         alter table voucher_numbering rename column f_year_uuid to f_year_id;
         alter table voucher_numbering ADD CONSTRAINT voucher_numbering_pkey PRIMARY KEY (branch_id, f_year_id, voucher_type_id);
--- BILL_OF_MATERIAL
-    alter table bill_of_material drop column if exists id;
-    alter table bill_of_material rename column uuid_id to id;
-    alter table bill_of_material alter column id set not null;
-    ALTER TABLE bill_of_material ADD CONSTRAINT bill_of_material_pkey PRIMARY KEY (id);
 -- BATCH
     alter table batch add unique (inventory_id, branch_id, warehouse_id, batch_no, vendor_id);
 -- PRINT_TEMPLATE
@@ -3191,20 +2752,33 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
     alter table print_template rename column uuid_id to id;
     alter table print_template alter column id set not null;
     ALTER TABLE print_template ADD CONSTRAINT print_template_pkey PRIMARY KEY (id);
-    --
+-- UDM_POS_SESSION
+    alter table udm_pos_session drop column if exists id;
+    alter table udm_pos_session rename column uuid_id to id;
+    alter table udm_pos_session alter column id set not null;
+    alter table udm_pos_session add constraint udm_pos_session_pkey primary key (id);
+        --
+        alter table voucher drop column if exists pos_counter_session_id;
+-- UDM_POS_COUNTER_SETTLEMENT
+    alter table udm_pos_counter_settlement drop column if exists id;
+    alter table udm_pos_counter_settlement rename column uuid_id to id;
+    alter table udm_pos_counter_settlement alter column id set not null;
+    alter table udm_pos_counter_settlement add constraint udm_pos_counter_settlement_pkey primary key (id);
+        --
+        alter table voucher drop column if exists pos_counter_settlement_id;
+        --
+        alter table udm_pos_session drop column if exists settlement_id;
+        alter table udm_pos_session rename column settlement_uuid to settlement_id;
 -- UDM_DOCTOR
     alter table udm_doctor drop column if exists id;
     alter table udm_doctor rename column uuid_id to id;
     alter table udm_doctor alter column id set not null;
-    ALTER TABLE udm_doctor ADD CONSTRAINT udm_doctor_pkey PRIMARY KEY (id);
+    alter table udm_doctor add constraint udm_doctor_pkey primary key (id);
 -- UDM_DRUG_CLASSIFICATION
     alter table udm_drug_classification drop column if exists id;
     alter table udm_drug_classification rename column uuid_id to id;
     alter table udm_drug_classification alter column id set not null;
-    ALTER TABLE udm_drug_classification ADD CONSTRAINT udm_drug_classification_pkey PRIMARY KEY (id);
-        --
-        alter table inv_txn drop column if exists udf_drug_classifications;
-        alter table inv_txn rename column udf_drug_classifications_uuid to udf_drug_classifications;
+    alter table udm_drug_classification add constraint udm_drug_classification_pkey primary key (id);
         --
         alter table udm_inventory_composition drop column if exists drug_classifications;
         alter table udm_inventory_composition rename column drug_classifications_uuid to drug_classifications;
@@ -3212,74 +2786,17 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
     alter table udm_inventory_composition drop column if exists id;
     alter table udm_inventory_composition rename column uuid_id to id;
     alter table udm_inventory_composition alter column id set not null;
-    ALTER TABLE udm_inventory_composition ADD CONSTRAINT udm_inventory_composition_pkey PRIMARY KEY (id);
+    alter table udm_inventory_composition add constraint udm_inventory_composition_pkey primary key (id);
         --
         alter table inventory drop column if exists udf_compositions;
         alter table inventory rename column udf_compositions_uuid to udf_compositions;
-    --
-select now() as time, 'RENAMING AND DROPPING UUID COLUMN END' as msg;
--------------------------------------------------------------------------------------------------
----- DROP TEMP INDEX
--------------------------------------------------------------------------------------------------
-select now() as time, 'DROPPING TEMP INDEX START' as msg;
-/*
--- AC_TXN
-DROP INDEX if exists ac_txn_account_id_account_uuid_id_idx;
-DROP INDEX if exists ac_txn_alt_account_id_alt_account_uuid_id_idx;
-DROP INDEX if exists ac_txn_branch_id_branch_uuid_id_idx;
-DROP INDEX if exists ac_txn_voucher_id_voucher_uuid_id_idx;
-DROP INDEX if exists ac_txn_voucher_type_id_voucher_type_uuid_id_idx;
-DROP INDEX if exists ac_txn_voucher_type_id_idx;
--- BATCH
-DROP INDEX if exists batch_vendor_id_vendor_uuid_id_idx;
-DROP INDEX if exists batch_branch_id_branch_uuid_id_idx;
-DROP INDEX if exists batch_inventory_id_inventory_uuid_id_idx;
-DROP INDEX if exists batch_voucher_id_voucher_uuid_id_idx;
-DROP INDEX if exists batch_warehouse_id_warehouse_uuid_id_idx;
--- -- INV_TXN
-DROP INDEX if exists inv_txn_vendor_id_vendor_uuid_id_idx;
-DROP INDEX if exists inv_txn_customer_id_customer_uuid_id_idx;
-DROP INDEX if exists inv_txn_branch_id_branch_uuid_id_idx;
-DROP INDEX if exists inv_txn_inventory_id_inventory_uuid_id_idx;
-DROP INDEX if exists inv_txn_sales_person_id_sales_person_uuid_id_idx;
-DROP INDEX if exists inv_txn_voucher_id_voucher_uuid_id_idx;
-DROP INDEX if exists inv_txn_voucher_type_id_voucher_type_uuid_id_idx;
-DROP INDEX if exists inv_txn_warehouse_id_warehouse_uuid_id_idx;
-DROP INDEX if exists inv_txn_batch_id_idx;
-DROP INDEX if exists inv_txn_voucher_type_id_idx;
--- VOUCHER
-DROP INDEX if exists voucher_vendor_id_vendor_uuid_id_idx;
-DROP INDEX if exists voucher_customer_id_customer_uuid_id_idx;
-DROP INDEX if exists voucher_branch_id_branch_uuid_id_idx;
-DROP INDEX if exists voucher_sales_person_id_sales_person_uuid_id_idx;
-DROP INDEX if exists voucher_vocher_type_id_vocher_type_uuid_id_idx;
-DROP INDEX if exists voucher_warehouse_id_warehouse_uuid_id_idx;
-*/
--- BATCH
-drop index if exists batch_vendor_id_idx;
-drop index if exists batch_branch_id_idx;
-drop index if exists batch_inventory_id_idx;
-drop index if exists batch_voucher_id_idx;
-drop index if exists batch_warehouse_id_idx;
--- VOUCHER
-drop index if exists voucher_voucher_type_id_idx;
-drop index if exists voucher_branch_id_idx;
--- AC_TXN
-drop index if exists ac_txn_alt_account_id_idx;
-drop index if exists ac_txn_branch_id_idx;
-drop index if exists ac_txn_voucher_id_idx;
-drop index if exists ac_txn_voucher_type_id_idx;
--- INV_TXN
-drop index if exists inv_txn_vendor_id_idx;
-drop index if exists inv_txn_branch_id_idx;
-drop index if exists inv_txn_inventory_id_idx;
-drop index if exists inv_txn_voucher_id_idx;
-drop index if exists inv_txn_voucher_type_id_idx;
-drop index if exists inv_txn_warehouse_id_idx;
-drop index if exists inv_txn_batch_id_idx;
---
-select now() as time, 'DROPPING TEMP INDEX END' as msg;
+-- UDM_WANTED_ITEM
+    alter table udm_wanted_item drop column if exists id;
+    alter table udm_wanted_item rename column uuid_id to id;
+    alter table udm_wanted_item alter column id set not null;
+    alter table udm_wanted_item add constraint udm_wanted_item_pkey primary key (id);
 
+select now() as time, 'RENAMING AND DROPPING UUID COLUMN END' as msg;
 -------------------------------------------------------------------------------------------------
 ---- INDEX RESTORE
 -------------------------------------------------------------------------------------------------
@@ -3292,16 +2809,20 @@ select now() as time, 'ADDING REQUIRED INDEX START' as msg;
 --## account
     create index on account (val_name);
     create index on account (transaction_enabled);
+    create index on account (mobile);
 --## bank_txn
     create index on bank_txn (date);
+    drop index if exists bank_txn_ac_txn_id;
     create index on bank_txn (ac_txn_id);
     create index on bank_txn (account_id);
     create index on bank_txn (voucher_id);
 --## batch
+    drop index if exists batch_barcode;
     create index on batch (barcode);
     create index on batch (inventory_id, branch_id, warehouse_id);
 --## bill_allocation
     create index on bill_allocation (eff_date);
+    drop index if exists bill_allocation_ac_txn_id;
     create index on bill_allocation (ac_txn_id);
     create index on bill_allocation (account_id);
     create index on bill_allocation (voucher_id);
@@ -3322,3 +2843,24 @@ select now() as time, 'ADDING REQUIRED INDEX START' as msg;
 select now() as time, 'ADDING REQUIRED INDEX END' as msg;
 --## last query
 delete from unit_conversion where conversion = 1;
+--## drop if any default exists
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN
+        SELECT table_schema, table_name, column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+        AND column_default IS NOT NULL
+    LOOP
+        EXECUTE format(
+            'ALTER TABLE %I.%I ALTER COLUMN %I DROP DEFAULT',
+            r.table_schema,
+            r.table_name,
+            r.column_name
+        );
+    END LOOP;
+END $$;
+--##
+select now() as time, 'MIGRATION END' as msg;
