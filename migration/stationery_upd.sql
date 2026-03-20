@@ -1028,8 +1028,8 @@ select now() as time, 'UUID_CHANGES FOR INVENTORY STARTS' as msg;
 -- inventory field related changes
 alter table inventory
     add if not exists section_id  uuid,
-    add if not exists inventory_category_id  uuid,
-    add if not exists inventory_sub_category_id  uuid,
+    add if not exists category_id  uuid,
+    add if not exists sub_category_id  uuid,
     add if not exists cess_qty    float,
     add if not exists cess_value  float;
 alter table inventory drop column if exists compositions;
@@ -1056,8 +1056,8 @@ ALTER TABLE inventory ADD COLUMN IF NOT EXISTS purchase_unit_uuid uuid;
     UPDATE inventory b SET manufacturer_uuid = a.uuid_id FROM manufacturer a WHERE a.id = b.manufacturer_id;
     UPDATE inventory b SET division_uuid = a.uuid_id FROM division a WHERE a.id = b.division_id;
     UPDATE inventory b SET section_id = a.id FROM section a WHERE a.old_id = b.category1_id;
-    UPDATE inventory b SET inventory_category_id = a.id FROM inventory_category a WHERE a.old_id = b.category2_id;
-    UPDATE inventory b SET inventory_sub_category_id = a.id FROM inventory_sub_category a WHERE a.old_id = b.category3_id;
+    UPDATE inventory b SET category_id = a.id FROM inventory_category a WHERE a.old_id = b.category2_id;
+    UPDATE inventory b SET sub_category_id = a.id FROM inventory_sub_category a WHERE a.old_id = b.category3_id;
     UPDATE inventory b
     SET unit_uuid          = (select id from unit where symbol = '1'),
         sale_unit_uuid     = (select id from unit where symbol = '1'),
@@ -1366,8 +1366,8 @@ select now() as time, 'general_migration_end' as msg;
 --## BATCH
 -- field related changes
 alter table batch drop column if exists section_id;
-alter table batch drop column if exists inventory_category_id;
-alter table batch drop column if exists inventory_sub_category_id;
+alter table batch drop column if exists category_id;
+alter table batch drop column if exists sub_category_id;
 alter table batch drop column if exists manufacturer_id;
 --
 update batch
@@ -1392,8 +1392,8 @@ ALTER TABLE batch ADD COLUMN IF NOT EXISTS branch_uuid uuid;
 ALTER TABLE batch ADD COLUMN IF NOT EXISTS inventory_uuid uuid;
 ALTER TABLE batch ADD COLUMN IF NOT EXISTS manufacturer_id uuid;
 ALTER TABLE batch ADD COLUMN IF NOT EXISTS section_id uuid;
-ALTER TABLE batch ADD COLUMN IF NOT EXISTS inventory_category_id uuid;
-ALTER TABLE batch ADD COLUMN IF NOT EXISTS inventory_sub_category_id uuid;
+ALTER TABLE batch ADD COLUMN IF NOT EXISTS category_id uuid;
+ALTER TABLE batch ADD COLUMN IF NOT EXISTS sub_category_id uuid;
 ALTER TABLE batch ADD COLUMN IF NOT EXISTS unit_uuid uuid;
 ALTER TABLE batch ADD COLUMN IF NOT EXISTS voucher_uuid uuid;
 ALTER TABLE batch ADD COLUMN IF NOT EXISTS warehouse_uuid uuid;
@@ -1415,8 +1415,8 @@ create index on batch (inventory_id);
 UPDATE batch b
     SET inventory_uuid            = a.uuid_id,
         section_id                = a.section_id,
-        inventory_category_id     = a.inventory_category_id,
-        inventory_sub_category_id = a.inventory_sub_category_id,
+        category_id     = a.category_id,
+        sub_category_id = a.sub_category_id,
         manufacturer_id           = a.manufacturer_id,
         inv_retail_qty            = a.retail_qty
     FROM inventory a WHERE a.id = b.inventory_id;
@@ -1768,8 +1768,8 @@ select now() as time, 'UUID_CHANGES FOR AC_TXN BRANCH_ID ENDS' as msg;
 select now() as time, 'UUID_CHANGES FOR INV_TXN STARTS' as msg;
 -- inv_txn field related changes
 alter table inv_txn drop column if exists section_id;
-alter table inv_txn drop column if exists inventory_category_id;
-alter table inv_txn drop column if exists inventory_sub_category_id;
+alter table inv_txn drop column if exists category_id;
+alter table inv_txn drop column if exists sub_category_id;
 alter table inv_txn drop column if exists manufacturer_id;
 --
 alter table inv_txn
@@ -1807,8 +1807,8 @@ alter table inv_txn
     add if not exists voucher_type_uuid        uuid,
     add if not exists warehouse_uuid           uuid,
     add if not exists section_id               uuid,
-    add if not exists inventory_category_id    uuid,
-    add if not exists inventory_sub_category_id uuid,
+    add if not exists category_id    uuid,
+    add if not exists sub_category_id uuid,
     add if not exists manufacturer_id          uuid,
     add if not exists free_qty                 float,
     add if not exists vendor_uuid              uuid,
@@ -1842,8 +1842,8 @@ set sno                         = i.sno,
     vendor_uuid                 = b.vendor_uuid,
     inventory_uuid              = b.inventory_uuid,
     section_id                  = b.section_id,
-    inventory_category_id       = b.inventory_category_id,
-    inventory_sub_category_id   = b.inventory_sub_category_id,
+    category_id       = b.category_id,
+    sub_category_id   = b.sub_category_id,
     manufacturer_id             = b.manufacturer_id
 from credit_note_inv_item i
          left join batch b on b.id = i.batch_id
@@ -1881,8 +1881,8 @@ set sno                         = i.sno,
     inventory_uuid              = b.inventory_uuid,
     vendor_uuid                 = b.vendor_uuid,
     section_id                  = b.section_id,
-    inventory_category_id       = b.inventory_category_id,
-    inventory_sub_category_id   = b.inventory_sub_category_id,
+    category_id       = b.category_id,
+    sub_category_id   = b.sub_category_id,
     manufacturer_id             = b.manufacturer_id
 from debit_note_inv_item i
          left join batch b on b.id = i.batch_id
@@ -1905,8 +1905,8 @@ set sno                         = i.sno,
     vendor_uuid                 = b.vendor_uuid,
     inventory_uuid              = b.inventory_uuid,
     section_id                  = b.section_id,
-    inventory_category_id       = b.inventory_category_id,
-    inventory_sub_category_id   = b.inventory_sub_category_id,
+    category_id       = b.category_id,
+    sub_category_id   = b.sub_category_id,
     manufacturer_id             = b.manufacturer_id
 from personal_use_purchase_inv_item i
          left join batch b on b.id = i.batch_id
@@ -1932,8 +1932,8 @@ set sno                         = i.sno,
     cess_on_val                 = i.cess_on_val,
     inventory_uuid              = b.inventory_uuid,
     section_id                  = b.section_id,
-    inventory_category_id       = b.inventory_category_id,
-    inventory_sub_category_id   = b.inventory_sub_category_id,
+    category_id       = b.category_id,
+    sub_category_id   = b.sub_category_id,
     manufacturer_id             = b.manufacturer_id,
     free_qty                    = i.free_qty,
     batch_no                    = b.batch_no,
@@ -1969,8 +1969,8 @@ set sno                         = i.sno,
     vendor_uuid                 = b.vendor_uuid,
     inventory_uuid              = b.inventory_uuid,
     section_id                  = b.section_id,
-    inventory_category_id       = b.inventory_category_id,
-    inventory_sub_category_id   = b.inventory_sub_category_id,
+    category_id       = b.category_id,
+    sub_category_id   = b.sub_category_id,
     manufacturer_id             = b.manufacturer_id
 from sale_bill_inv_item i
     left join batch b on b.id = i.batch_id
@@ -2027,8 +2027,8 @@ set sno                         = i.sno,
     landing_cost                = b.landing_cost,
     cost                        = b.cost,
     section_id                  = b.section_id,
-    inventory_category_id       = b.inventory_category_id,
-    inventory_sub_category_id   = b.inventory_sub_category_id,
+    category_id       = b.category_id,
+    sub_category_id   = b.sub_category_id,
     inventory_uuid              = b.inventory_uuid,
     manufacturer_id             = b.manufacturer_id
 from stock_journal_inv_item i
@@ -2056,8 +2056,8 @@ set sno                         = i.sno,
     cost                        = b.cost,
     inventory_uuid              = b.inventory_uuid,
     section_id                  = b.section_id,
-    inventory_category_id       = b.inventory_category_id,
-    inventory_sub_category_id   = b.inventory_sub_category_id,
+    category_id       = b.category_id,
+    sub_category_id   = b.sub_category_id,
     manufacturer_id             = b.manufacturer_id
 from inventory_opening i
          left join batch b on b.txn_id = i.id
@@ -2162,6 +2162,7 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table inv_txn drop column if exists vendor_name;
     alter table inv_txn drop column if exists reorder_inventory_id;
     alter table inv_txn drop column if exists inventory_hsn;
+    alter table inv_txn drop column if exists division_name;
     alter table inv_txn drop column if exists manufacturer_name;
     alter table inv_txn drop column if exists is_opening;
     alter table inv_txn drop column if exists inventory_voucher_id;
@@ -2239,6 +2240,7 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table batch drop column if exists reorder_inventory_id;
     alter table batch drop column if exists inventory_hsn;
     alter table batch drop column if exists branch_name;
+    alter table batch drop column if exists division_name;
     alter table batch drop column if exists warehouse_name;
     alter table batch drop column if exists txn_id;
     alter table batch drop column if exists inventory_voucher_id;
