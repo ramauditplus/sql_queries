@@ -1195,9 +1195,11 @@ select now() as time, 'uuid_changes for udm_pos_session ends' as msg;
 select now() as time, 'UUID_CHANGES FOR UDM_VENDOR_ITEM_MAP STARTS' as msg;
 ALTER TABLE udm_vendor_item_map ADD COLUMN IF NOT EXISTS vendor_uuid uuid;
 ALTER TABLE udm_vendor_item_map ADD COLUMN IF NOT EXISTS inventory_uuid uuid;
+ALTER TABLE udm_vendor_item_map ADD COLUMN IF NOT EXISTS unit_id uuid;
 ------------------
     UPDATE udm_vendor_item_map b SET vendor_uuid = a.uuid_id FROM account a WHERE a.id = b.vendor_id;
     UPDATE udm_vendor_item_map b SET inventory_uuid = a.uuid_id FROM inventory a WHERE a.id = b.inventory_id;
+    UPDATE udm_vendor_item_map b SET unit_id = a.unit_uuid FROM inventory a WHERE a.id = b.inventory_id;
 select now() as time, 'UUID_CHANGES FOR UDM_VENDOR_ITEM_MAP ENDS' as msg;
 --## UDM_VENDOR_ITEM_MAP
 ---------------------------------------------------------------------------
@@ -2498,6 +2500,7 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         alter table udm_vendor_item_map drop column if exists vendor_id;
         alter table udm_vendor_item_map rename column vendor_uuid to vendor_id;
         alter table udm_vendor_item_map alter column vendor_id set not null;
+        alter table udm_vendor_item_map alter column unit_id set not null;
         alter table udm_vendor_item_map add constraint udm_vendor_item_map_pkey PRIMARY KEY (vendor_id, vendor_inventory);
 -- ACCOUNT_TYPE
     alter table account_type drop column if exists id;
