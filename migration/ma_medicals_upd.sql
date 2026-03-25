@@ -652,8 +652,8 @@ VALUES
 ('019549da-5400-703a-8000-000000000000', 'Vijaya Bank', 'VIJB', 'VIJAYA', NULL),
 ('01954f00-b000-703b-8000-000000000000', 'Punjab National Bank', 'PUNB', 'PUNB', NULL);
 --##
-alter table bank add unique (code);
-alter table bank add unique (name);
+-- alter table bank add unique (code);
+-- alter table bank add unique (name);
 --##
 drop table if exists bank_beneficiary;
 --##
