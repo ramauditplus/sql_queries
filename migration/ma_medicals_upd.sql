@@ -1275,7 +1275,7 @@ select now() as time, 'MEMBER TABLE ALTER START' as msg;
 --## MEMBER
 alter table member
     add if not exists perms text[],
-    add if not exists ui_perms jsonb;
+    add if not exists ui_perms text[];
 --##
 -- update member m
 -- set
