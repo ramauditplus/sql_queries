@@ -727,7 +727,7 @@ ALTER TABLE member ADD COLUMN IF NOT EXISTS oid_id text DEFAULT oid();
 ALTER TABLE division ADD COLUMN IF NOT EXISTS oid_id text DEFAULT oid();
 --##
 UPDATE member SET oid_id = '677485800000000000000000' WHERE id = 1;
-alter table member alter column remote_access set not null;
+alter table member alter column remote_access drop not null;
 --##
 select now() as time, 'SETTING UUID AS COLUMN STARTS' as msg;
 --##
@@ -1265,7 +1265,6 @@ select now() as time, 'OID_CHANGES FOR UDM_INVENTORY_COMPOSITION ENDS' as msg;
 select now() as time, 'OID_CHANGES FOR UDM_WANTED_ITEM STARTS' as msg;
 ALTER TABLE udm_wanted_item ADD COLUMN IF NOT EXISTS branch_oid text;
 ALTER TABLE udm_wanted_item ADD COLUMN IF NOT EXISTS inventory_oid text;
-ALTER TABLE udm_wanted_item ADD COLUMN IF NOT EXISTS item_description text;
 ------------------
     UPDATE udm_wanted_item b SET branch_oid = a.oid_id FROM branch a WHERE a.id = b.branch_id;
     UPDATE udm_wanted_item b SET inventory_oid = a.oid_id FROM inventory a WHERE a.id = b.inventory_id;
@@ -1520,6 +1519,7 @@ alter table voucher
     add if not exists udf_approved                 bool,
     add if not exists branch_oid                  text,
     add if not exists voucher_type_oid            text,
+    add if not exists particulars                 text,
     add if not exists udf_pos_counter_session_id   text,
     add if not exists udf_pos_counter_settlement_id text,
     add if not exists udf_customer_mobile          text,
@@ -2211,7 +2211,7 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table inv_txn drop column if exists sale_taxable_amount;
     alter table inv_txn drop column if exists sale_tax_amount;
     alter table inv_txn drop column if exists pos_id;
---     alter table inv_txn drop if exists batch_id;
+    alter table inv_txn drop if exists batch_id; -- check_again
     alter table inv_txn alter column batch_id drop not null;
     alter table inv_txn drop if exists dummy;
 -- VOUCHER --
@@ -2295,10 +2295,9 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table batch drop column if exists inv_retail_qty;
 -- BILL_ALLOCATION --
     alter table bill_allocation drop column if exists base_account_types;
---     alter table bill_allocation drop column if exists pending;
+    alter table bill_allocation drop column if exists pending; -- check_again
     alter table bill_allocation drop column if exists old_ref_no;
     alter table bill_allocation drop column if exists is_approved;
-    alter table bill_allocation drop column if exists due_date;
     alter table bill_allocation drop column if exists account_type_name;
     alter table bill_allocation drop column if exists bill_date;
 -- INVENTORY --
@@ -2312,7 +2311,6 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table inventory drop column if exists purchase_config;
     alter table inventory drop column if exists sale_config;
     alter table inventory drop column if exists tags;
-    alter table inventory drop column if exists description;
     alter table inventory drop column if exists manufacturer_name;
     alter table inventory drop column if exists vendor_id;
     alter table inventory drop column if exists vendor_name;
@@ -2599,7 +2597,6 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
     ALTER TABLE branch ADD CONSTRAINT branch_pkey PRIMARY KEY (id);
     alter table branch alter column misc type jsonb using misc::jsonb;
     alter table branch alter column configuration type jsonb using configuration::jsonb;
-    alter table branch alter column members drop not null;
         --
         alter table ac_txn drop column if exists branch_id;
         alter table ac_txn rename column branch_oid to branch_id;
@@ -2794,7 +2791,7 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         alter table batch drop column if exists warehouse_id;
         alter table batch rename column warehouse_oid to warehouse_id;
         alter table batch alter column warehouse_id set not null;
---         alter table batch drop column if exists id;
+        alter table batch drop column if exists id; -- check_again
         --
         alter table inv_txn drop column if exists warehouse_id;
         alter table inv_txn rename column warehouse_oid to warehouse_id;
@@ -2807,7 +2804,6 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         --
         alter table branch drop column if exists members;
         alter table branch rename column members_oid to members;
-        alter table branch alter column members set not null;
 -- FINANCIAL_YEAR
     alter table financial_year drop column if exists id;
     alter table financial_year rename column oid_id to id;
@@ -2829,6 +2825,8 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
     alter table organization rename column oid_id to id;
     alter table organization alter column id set not null;
     ALTER TABLE organization ADD CONSTRAINT organization_pkey PRIMARY KEY (id);
+    alter table organization alter column created_by set not null;
+    alter table organization alter column updated_by set not null;
 -- UDM_POS_SESSION
     alter table udm_pos_session drop column if exists id;
     alter table udm_pos_session rename column oid_id to id;
