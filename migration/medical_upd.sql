@@ -2212,7 +2212,7 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table inv_txn drop column if exists sale_tax_amount;
     alter table inv_txn drop column if exists pos_id;
     alter table inv_txn drop if exists batch_id; -- check_again
-    alter table inv_txn alter column batch_id drop not null;
+--     alter table inv_txn alter column batch_id drop not null;
     alter table inv_txn drop if exists dummy;
 -- VOUCHER --
     alter table voucher drop column if exists branch_gst;
