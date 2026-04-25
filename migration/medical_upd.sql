@@ -1538,6 +1538,15 @@ set udf_pos_counter_settlement_id = b.oid_id
 from udm_pos_counter_settlement b
 where v.pos_counter_settlement_id = b.id;
 --##
+UPDATE voucher a
+SET gst_location_type = CASE
+    WHEN g.gst_location_type = 'LOCAL' THEN 'INTRA'
+    WHEN g.gst_location_type = 'INTER_STATE' THEN 'INTER'
+END
+FROM gst_txn g
+WHERE a.id = g.voucher_id
+  AND g.gst_location_type IN ('LOCAL', 'INTER_STATE');
+--##
 UPDATE voucher v
 SET branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
     branch_gst_location_id = b.branch_gst ->> 'location_id',
@@ -1740,6 +1749,7 @@ create index on gst_txn (ac_txn_id);
 -- ac_txn field related changes
 alter table ac_txn
     add if not exists qty            float,
+    add if not exists item_name      text,
     add if not exists hsn_code       text,
     add if not exists uqc            text,
     add if not exists gst_tax        text,
@@ -1752,6 +1762,7 @@ alter table ac_txn
 --##
 UPDATE ac_txn a
 SET qty            = g.qty,
+    item_name      = g.item_name,
     gst_tax        = g.gst_tax,
     gst_ratio      = g.tax_ratio,
     hsn_code       = g.hsn_code,
