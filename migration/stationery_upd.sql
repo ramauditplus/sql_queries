@@ -871,10 +871,7 @@ UPDATE voucher_type vt
                                       jsonb_set(
                                               elem,
                                               '{member_id}',
-                                              jsonb_build_object(
-                                                      '$text',
-                                                      m.oid_id
-                                              )
+                                              to_jsonb(m.oid_id)
                                       )
                               )
                        FROM jsonb_array_elements(vt.members) elem
