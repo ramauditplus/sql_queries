@@ -261,6 +261,34 @@ values
     ('branch_get', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('branch_list', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('branch_delete', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    --sales_person
+    ('sales_person_create', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('sales_person_update', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('sales_person_get', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('sales_person_list', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('sales_person_delete', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    --device
+    ('device_create', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('device_update', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('device_get', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('device_list', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('device_delete', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('device_register', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    --division
+    ('division_create', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('division_update', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('division_get', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('division_delete', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    --inventory_category
+    ('inventory_category_create', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('inventory_category_update', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('inventory_category_get', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('inventory_category_delete', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    --inventory_sub_category
+    ('inventory_sub_category_create', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('inventory_sub_category_update', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('inventory_sub_category_get', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('inventory_sub_category_delete', '677485800000000000000000', '677485800000000000000000', now(), now()),
     --gst_registration
     ('gst_registration_create', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('gst_registration_update', '677485800000000000000000', '677485800000000000000000', now(), now()),
@@ -279,26 +307,13 @@ values
     ('section_get', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('section_list', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('section_delete', '677485800000000000000000', '677485800000000000000000', now(), now()),
-    --inventory_category
-    ('inventory_category_create', '677485800000000000000000', '677485800000000000000000', now(), now()),
-    ('inventory_category_update', '677485800000000000000000', '677485800000000000000000', now(), now()),
-    ('inventory_category_get', '677485800000000000000000', '677485800000000000000000', now(), now()),
-    ('inventory_category_list', '677485800000000000000000', '677485800000000000000000', now(), now()),
-    ('inventory_category_delete', '677485800000000000000000', '677485800000000000000000', now(), now()),
-    --inventory_sub_category
-    ('inventory_sub_category_create', '677485800000000000000000', '677485800000000000000000', now(), now()),
-    ('inventory_sub_category_update', '677485800000000000000000', '677485800000000000000000', now(), now()),
-    ('inventory_sub_category_get', '677485800000000000000000', '677485800000000000000000', now(), now()),
-    ('inventory_sub_category_list', '677485800000000000000000', '677485800000000000000000', now(), now()),
-    ('inventory_sub_category_delete', '677485800000000000000000', '677485800000000000000000', now(), now()),
     --inventory
     ('inventory_create', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('inventory_update', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('inventory_get', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('inventory_list', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('inventory_delete', '677485800000000000000000', '677485800000000000000000', now(), now()),
-    --inventory_opening
-    ('inventory_opening', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('inventory_merge', '677485800000000000000000', '677485800000000000000000', now(), now()),
     --unit_conversion
     ('unit_conversion_set', '677485800000000000000000', '677485800000000000000000', now(), now()),
     --unit
@@ -309,11 +324,8 @@ values
     ('unit_delete', '677485800000000000000000', '677485800000000000000000', now(), now()),
     --financial_report
     ('financial_report', '677485800000000000000000', '677485800000000000000000', now(), now()),
-    ('opening_balance_difference', '677485800000000000000000', '677485800000000000000000', now(), now()),
     --financial_year
-    ('financial_year_add', '677485800000000000000000', '677485800000000000000000', now(), now()),
-    ('financial_year_get', '677485800000000000000000', '677485800000000000000000', now(), now()),
-    ('financial_year_list', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('financial_year', '677485800000000000000000', '677485800000000000000000', now(), now()),
     --manufacturer
     ('manufacturer_create', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('manufacturer_update', '677485800000000000000000', '677485800000000000000000', now(), now()),
@@ -349,6 +361,7 @@ values
     ('print_layout_get', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('print_layout_list', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('print_layout_create', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('print_layout_delete', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('print_layout_update', '677485800000000000000000', '677485800000000000000000', now(), now()),
     --print_template
     ('print_template_create', '677485800000000000000000', '677485800000000000000000', now(), now()),
@@ -356,6 +369,7 @@ values
     ('print_template_get', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('print_template_cancel', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('print_template_delete', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('print_template_update', '677485800000000000000000', '677485800000000000000000', now(), now()),
     --stock_location
     ('stock_location_create', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('stock_location_update', '677485800000000000000000', '677485800000000000000000', now(), now()),
@@ -369,8 +383,7 @@ values
     ('organization_get', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('organization_update', '677485800000000000000000', '677485800000000000000000', now(), now()),
     --voucher_register
-    ('voucher_register_detail', '677485800000000000000000', '677485800000000000000000', now(), now()),
-    ('voucher_register_group', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('voucher_register', '677485800000000000000000', '677485800000000000000000', now(), now()),
     --voucher_type
     ('voucher_type_create', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('voucher_type_update', '677485800000000000000000', '677485800000000000000000', now(), now()),
@@ -397,21 +410,22 @@ values
     ('stock_analysis', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('expiry_analysis', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('negative_stock_analysis', '677485800000000000000000', '677485800000000000000000', now(), now()),
-    ('non_movement_analysis', '677485800000000000000000', '677485800000000000000000', now(), now()),
-    ('inventory_batch', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('inventory_batch_detail', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('inventory_book', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('inventory_transaction_history', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('memorandum', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('partywise_detail', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('get_batch_detail_with_stock_location', '677485800000000000000000', '677485800000000000000000', now(), now()),
-    ('get_inventory_branch_stock_location_label', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('stock_location_label', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('get_stock_location_wise_branch_stock', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('get_transfer_pending', '677485800000000000000000', '677485800000000000000000', now(), now()),
     ('account_opening', '677485800000000000000000', '677485800000000000000000', now(), now()),
-    ('tds_detail', '677485800000000000000000', '677485800000000000000000', now(), now());
-    -- wanted_item_config
-    -- ('wanted_item_configuration', '677485800000000000000000', '677485800000000000000000', now(), now()),
-    -- ('wanted_item_status', '677485800000000000000000', '677485800000000000000000', now(), now());
+    ('inventory_opening', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('tds_detail', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('tds_summary', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('email_config', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('payment_advice', '677485800000000000000000', '677485800000000000000000', now(), now()),
+    ('voucher_numbering', '677485800000000000000000', '677485800000000000000000', now(), now());
 --## PERMISSION
 
 --## SECTION
@@ -1451,8 +1465,17 @@ UPDATE batch b
 select now() as time, 'OID_CHANGES FOR BATCH inv_id, sec_id, inv_cat_id, inv_sub_cat_id manu_id ENDS' as msg;
 --##
 select now() as time, 'UNIT_CONV ASSIGN FOR BATCH STARTS' as msg;
+--##
+alter table batch alter column p_rate drop expression;
+--##
 update batch b
-    set unit_conv = case when b.is_retail_qty then 1 else b.retail_qty end;
+set unit_conv    = case when b.is_retail_qty then 1 else b.retail_qty end,
+    mrp          = case when b.is_retail_qty then mrp / b.retail_qty else b.mrp end,
+    cost         = case when b.is_retail_qty then cost / b.retail_qty else b.cost end,
+    nlc          = case when b.is_retail_qty then nlc / b.retail_qty else b.nlc end,
+    landing_cost = case when b.is_retail_qty then landing_cost / b.retail_qty else b.landing_cost end,
+    s_rate       = case when b.is_retail_qty then s_rate / b.retail_qty else b.s_rate end,
+    p_rate       = b.opening_p_rate;
 select now() as time, 'UNIT_CONV ASSIGN FOR BATCH ENDS' as msg;
 --##
 select now() as time, 'UNIT_UUID ASSIGN FOR BATCH STARTS' as msg;
@@ -2276,7 +2299,7 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table bank_txn drop column if exists bank_ref_no;
     alter table bank_txn drop column if exists bank_particulars;
 -- BATCH --
-    alter table batch alter column p_rate drop expression;
+--     alter table batch alter column p_rate drop expression;
     alter table batch alter column closing drop expression;
     alter table batch drop column if exists sno;
     alter table batch drop column if exists reorder_inventory_id;
