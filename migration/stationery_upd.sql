@@ -1589,7 +1589,8 @@ SET branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
     discount               = b.discount_amount,
     rounded_off            = b.rounded_off,
     branch_oid            = br.oid_id,
-    voucher_type_oid      = vt.oid_id
+    voucher_type_oid      = vt.oid_id,
+    particulars           = b.vendor_name
 FROM debit_note b
     LEFT JOIN warehouse w ON b.warehouse_id = w.id
     LEFT JOIN account a   ON b.vendor_id = a.id
@@ -1613,7 +1614,8 @@ SET branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
     rounded_off            = b.rounded_off,
     sales_person_id        = sp.oid_id,
     branch_oid            = br.oid_id,
-    voucher_type_oid      = vt.oid_id
+    voucher_type_oid      = vt.oid_id,
+    particulars           = b.customer_name
 FROM credit_note b
     LEFT JOIN warehouse w ON w.id = b.warehouse_id
     LEFT JOIN account a   ON a.id = b.customer_id
@@ -1643,7 +1645,8 @@ SET warehouse_id   = w.oid_id,
     warehouse_name = b.warehouse_name,
     vendor_id      = a.oid_id,
     vendor_name    = b.vendor_name,
-    branch_oid    = br.oid_id
+    branch_oid    = br.oid_id,
+    particulars   = b.vendor_name
 FROM goods_inward_note b
     LEFT JOIN warehouse w ON w.id = b.warehouse_id
     LEFT JOIN account a   ON a.id = b.vendor_id
@@ -1685,7 +1688,8 @@ SET branch_gst_reg_type      = b.branch_gst ->> 'reg_type',
     nlc_value                = b.nlc_value,
     valid_provisional_profit = b.valid_provisional_profit,
     branch_oid              = br.oid_id,
-    voucher_type_oid        = vt.oid_id
+    voucher_type_oid        = vt.oid_id,
+    particulars             = b.vendor_name
 FROM purchase_bill b
     LEFT JOIN warehouse w ON b.warehouse_id = w.id
     LEFT JOIN account a   ON b.vendor_id = a.id
@@ -1710,10 +1714,11 @@ SET branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
     rounded_off            = b.rounded_off,
     sales_person_id        = sp.oid_id,
     branch_oid            = br.oid_id,
-    voucher_type_oid      = vt.oid_id
+    voucher_type_oid      = vt.oid_id,
 --     udf_customer_mobile    = a.mobile,
 --     udf_reminder_date      = b.date + b.reminder_days,
---     udf_doctor_id          = ud.oid_id
+--     udf_doctor_id          = ud.oid_id,
+    particulars            = b.customer_name
 FROM sale_bill b
     LEFT JOIN warehouse w     ON w.id = b.warehouse_id
     LEFT JOIN account a       ON a.id = b.customer_id
@@ -1740,7 +1745,8 @@ SET branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
     rounded_off            = b.rounded_off,
     sales_person_id        = sp.oid_id,
     branch_oid            = br.oid_id,
-    voucher_type_oid      = vt.oid_id
+    voucher_type_oid      = vt.oid_id,
+    particulars           = b.customer_name
 FROM sale_quotation b
     LEFT JOIN warehouse w     ON w.id = b.warehouse_id
     LEFT JOIN account a       ON a.id = b.customer_id
