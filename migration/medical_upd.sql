@@ -1239,7 +1239,15 @@ ALTER TABLE udm_vendor_item_map ADD COLUMN IF NOT EXISTS unit_id text;
 ------------------
     UPDATE udm_vendor_item_map b SET vendor_oid = a.oid_id FROM account a WHERE a.id = b.vendor_id;
     UPDATE udm_vendor_item_map b SET inventory_oid = a.oid_id FROM inventory a WHERE a.id = b.inventory_id;
-    UPDATE udm_vendor_item_map b SET unit_id = a.unit_oid FROM inventory a WHERE a.id = b.inventory_id;
+    UPDATE udm_vendor_item_map b
+        SET unit_id = CASE
+                          WHEN a.retail_qty = 1 THEN a.unit_oid
+                          ELSE uc.conversion_unit_id
+                    END
+        FROM inventory a
+                 LEFT JOIN unit_conversion uc
+                               on uc.conversion = a.retail_qty
+        WHERE a.id = b.inventory_id;
 select now() as time, 'OID_CHANGES FOR UDM_VENDOR_ITEM_MAP ENDS' as msg;
 --## UDM_VENDOR_ITEM_MAP
 ---------------------------------------------------------------------------
