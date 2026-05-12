@@ -1182,6 +1182,8 @@ select now() as time, 'OID_CHANGES FOR BATCH ENDS' as msg;
 --## VOUCHER
 select now() as time, 'OID_CHANGES FOR VOUCHER STARTS' as msg;
 -- voucher field related changes
+alter table voucher rename column party_name to particulars;
+--
 alter table voucher
     add if not exists metadata                     jsonb,
     add if not exists branch_gst_reg_type          text,
@@ -1211,7 +1213,6 @@ alter table voucher
     add if not exists udf_approved                 bool,
     add if not exists branch_oid                  text,
     add if not exists voucher_type_oid            text,
-    add if not exists particulars                 text,
     add if not exists udf_pos_counter_session_id   text,
     add if not exists udf_pos_counter_settlement_id text;
 --     add if not exists udf_customer_mobile          text,
@@ -1253,9 +1254,9 @@ SET branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
     disc_mode              = b.discount_mode,
     discount               = b.discount_amount,
     rounded_off            = b.rounded_off,
-    branch_oid            = br.oid_id,
-    voucher_type_oid      = vt.oid_id,
-    particulars           = b.vendor_name
+    branch_oid             = br.oid_id,
+    voucher_type_oid       = vt.oid_id,
+    particulars            = COALESCE(b.vendor_name, v.particulars)
 FROM debit_note b
     LEFT JOIN warehouse w ON b.warehouse_id = w.id
     LEFT JOIN account a   ON b.vendor_id = a.id
@@ -1278,9 +1279,9 @@ SET branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
     discount               = b.discount_amount,
     rounded_off            = b.rounded_off,
     sales_person_id        = sp.oid_id,
-    branch_oid            = br.oid_id,
-    voucher_type_oid      = vt.oid_id,
-    particulars           = b.customer_name
+    branch_oid             = br.oid_id,
+    voucher_type_oid       = vt.oid_id,
+    particulars            = COALESCE(b.customer_name, v.particulars)
 FROM credit_note b
     LEFT JOIN warehouse w ON w.id = b.warehouse_id
     LEFT JOIN account a   ON a.id = b.customer_id
@@ -1310,8 +1311,8 @@ SET warehouse_id   = w.oid_id,
     warehouse_name = b.warehouse_name,
     vendor_id      = a.oid_id,
     vendor_name    = b.vendor_name,
-    branch_oid    = br.oid_id,
-    particulars   = b.vendor_name
+    branch_oid     = br.oid_id,
+    particulars    = COALESCE(b.vendor_name, v.particulars)
 FROM goods_inward_note b
     LEFT JOIN warehouse w ON w.id = b.warehouse_id
     LEFT JOIN account a   ON a.id = b.vendor_id
@@ -1352,9 +1353,9 @@ SET branch_gst_reg_type      = b.branch_gst ->> 'reg_type',
     profit_value             = b.profit_value,
     nlc_value                = b.nlc_value,
     valid_provisional_profit = b.valid_provisional_profit,
-    branch_oid              = br.oid_id,
-    voucher_type_oid        = vt.oid_id,
-    particulars             = b.vendor_name
+    branch_oid               = br.oid_id,
+    voucher_type_oid         = vt.oid_id,
+    particulars              = COALESCE(b.vendor_name, v.particulars)
 FROM purchase_bill b
     LEFT JOIN warehouse w ON b.warehouse_id = w.id
     LEFT JOIN account a   ON b.vendor_id = a.id
@@ -1378,12 +1379,12 @@ SET branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
     discount               = b.discount_amount,
     rounded_off            = b.rounded_off,
     sales_person_id        = sp.oid_id,
-    branch_oid            = br.oid_id,
-    voucher_type_oid      = vt.oid_id,
+    branch_oid             = br.oid_id,
+    voucher_type_oid       = vt.oid_id,
 --     udf_customer_mobile    = a.mobile,
 --     udf_reminder_date      = b.date + b.reminder_days,
 --     udf_doctor_id          = ud.oid_id,
-    particulars            = b.customer_name
+    particulars            = COALESCE(b.customer_name, v.particulars)
 FROM sale_bill b
     LEFT JOIN warehouse w     ON w.id = b.warehouse_id
     LEFT JOIN account a       ON a.id = b.customer_id
@@ -1409,9 +1410,9 @@ SET branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
     discount               = b.discount_amount,
     rounded_off            = b.rounded_off,
     sales_person_id        = sp.oid_id,
-    branch_oid            = br.oid_id,
-    voucher_type_oid      = vt.oid_id,
-    particulars           = b.customer_name
+    branch_oid             = br.oid_id,
+    voucher_type_oid       = vt.oid_id,
+    particulars            = COALESCE(b.customer_name, v.particulars)
 FROM sale_quotation b
     LEFT JOIN warehouse w     ON w.id = b.warehouse_id
     LEFT JOIN account a       ON a.id = b.customer_id
@@ -1927,7 +1928,6 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table voucher drop column if exists branch_gst;
     alter table voucher drop column if exists party_gst;
     alter table voucher drop column if exists party_id;
-    alter table voucher drop column if exists party_name;
     alter table voucher drop column if exists pos_counter_code;
     alter table voucher drop column if exists approval_state;
     alter table voucher drop column if exists require_no_of_approval;
