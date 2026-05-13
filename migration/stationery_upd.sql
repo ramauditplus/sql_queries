@@ -1484,6 +1484,21 @@ alter table ac_txn
     alter column is_memo set not null,
     alter column metadata type jsonb using metadata::jsonb,
     alter column sno type integer using sno::integer;
+--#
+UPDATE ac_txn
+SET metadata = jsonb_set(
+        COALESCE(metadata, '{}'::jsonb),
+        '{has_extra_account_adjustments}',
+        'true'::jsonb,
+        true
+               )
+WHERE account_id IN ('12', '13', '14')
+  AND base_voucher_type IN (
+                            'SALE',
+                            'PURCHASE',
+                            'CREDIT_NOTE',
+                            'DEBIT_NOTE'
+    );
 -- ac_txn text related changes
 ALTER TABLE ac_txn ADD COLUMN IF NOT EXISTS account_oid text;
 ALTER TABLE ac_txn ADD COLUMN IF NOT EXISTS alt_account_oid text;
