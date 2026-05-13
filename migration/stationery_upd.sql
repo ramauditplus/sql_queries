@@ -543,6 +543,12 @@ WHERE base_type IN ('PURCHASE', 'SALE', 'CREDIT_NOTE', 'DEBIT_NOTE')
   AND config ? 'inventory';
 --##
 UPDATE voucher_type SET name = 'Stock Journal', base_type = 'STOCK_JOURNAL' WHERE id = 10;
+UPDATE ac_txn set base_voucher_type = 'STOCK_JOURNAL' where base_voucher_type = 'STOCK_ADJUSTMENT';
+UPDATE bank_txn set base_voucher_type = 'STOCK_JOURNAL' where base_voucher_type = 'STOCK_ADJUSTMENT';
+UPDATE bill_allocation set base_voucher_type = 'STOCK_JOURNAL' where base_voucher_type = 'STOCK_ADJUSTMENT';
+UPDATE inv_txn set base_voucher_type = 'STOCK_JOURNAL' where base_voucher_type = 'STOCK_ADJUSTMENT';
+UPDATE tds_on_voucher set base_voucher_type = 'STOCK_JOURNAL' where base_voucher_type = 'STOCK_ADJUSTMENT';
+UPDATE voucher set base_voucher_type = 'STOCK_JOURNAL' where base_voucher_type = 'STOCK_ADJUSTMENT';
 --##
 UPDATE voucher_type vt
         SET members = (SELECT jsonb_agg(
