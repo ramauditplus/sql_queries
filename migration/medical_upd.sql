@@ -321,29 +321,6 @@ from unit;
 --## BASE_VOUCHER_TYPE
 drop table if exists base_voucher_type;
 --##
-create table if not exists base_voucher_type
-(
-    base_type text  not null primary key,
-    name text       not null,
-    is_default bool not null
-);
---##
-insert into base_voucher_type (base_type, name, is_default)
-values ('PAYMENT', 'Payment', true),
-       ('RECEIPT', 'Receipt', true),
-       ('CONTRA', 'Contra', true),
-       ('JOURNAL', 'Journal', true),
-       ('SALE', 'Sale', true),
-       ('CREDIT_NOTE', 'Credit Note', true),
-       ('PURCHASE', 'Purchase', true),
-       ('DEBIT_NOTE', 'Debit Note', true),
-       ('SALE_QUOTATION', 'Sale Quotation', true),
-       ('STOCK_JOURNAL', 'Stock Journal', true),
-       ('GOODS_INWARD_NOTE', 'Goods Inward Note', true),
-       ('DELIVERY_NOTE', 'Delivery Note', true),
-       ('DELIVERY_RECEIPT', 'Delivery Receipt', true);
---##
---## BASE_VOUCHER_TYPE
 
 ALTER TABLE warehouse ADD COLUMN IF NOT EXISTS oid_id text DEFAULT oid();
 --##
