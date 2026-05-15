@@ -1173,20 +1173,7 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table account drop column if exists service_charge_non_gst_account_id;
     alter table account drop column if exists itc_ineligible;
     alter table account drop column if exists secondary_emails;
--- BANK_TXN --
-    alter table bank_txn alter column credit drop expression;
-    alter table bank_txn alter column debit drop expression;
-    alter table bank_txn drop column if exists in_favour_of;
-    alter table bank_txn drop column if exists base_account_types;
-    alter table bank_txn drop column if exists alt_account_name;
-    alter table bank_txn drop column if exists bank_beneficiary_id;
-    alter table bank_txn drop column if exists epayment_tran_ref;
-    alter table bank_txn drop column if exists epayment_req_ref;
-    alter table bank_txn drop column if exists epayment_status;
-    alter table bank_txn drop column if exists bank_ref_no;
-    alter table bank_txn drop column if exists bank_particulars;
 -- BATCH --
---     alter table batch alter column p_rate drop expression;
     alter table batch alter column closing drop expression;
     alter table batch drop column if exists sno;
     alter table batch drop column if exists reorder_inventory_id;
@@ -1194,7 +1181,6 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table batch drop column if exists branch_name;
     alter table batch drop column if exists division_name;
     alter table batch drop column if exists warehouse_name;
-    -- alter table batch drop column if exists txn_id;
     alter table batch drop column if exists inventory_voucher_id;
     alter table batch drop column if exists opening_p_rate;
     alter table batch drop column if exists label_qty;
@@ -1210,14 +1196,6 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table batch drop column if exists category2_name;
     alter table batch drop column if exists category3_id;
     alter table batch drop column if exists category3_name;
-    alter table batch drop column if exists inv_retail_qty;
--- BILL_ALLOCATION --
-    alter table bill_allocation drop column if exists base_account_types;
-    --alter table bill_allocation drop column if exists pending; -- check_again
-    alter table bill_allocation drop column if exists old_ref_no;
-    alter table bill_allocation drop column if exists is_approved;
-    alter table bill_allocation drop column if exists account_type_name;
-    alter table bill_allocation drop column if exists bill_date;
 -- INVENTORY --
     alter table inventory alter column val_name drop expression;
     alter table inventory drop column if exists cess;
@@ -1318,19 +1296,10 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     drop table if exists bill_of_material_component;
     drop table if exists category;
     drop table if exists category_option;
-    drop table if exists credit_note;
-    drop table if exists credit_note_inv_item;
     drop table if exists customer_advance;
-    drop table if exists debit_note;
-    drop table if exists debit_note_inv_item;
-    drop table if exists purchase_bill;
-    drop table if exists purchase_bill_inv_item;
     drop table if exists sale_bill_reminder_inv_item;
     drop table if exists sale_bill_reminder;
-    drop table if exists sale_bill;
-    drop table if exists sale_bill_inv_item;
     drop table if exists sale_package;
-    drop table if exists sale_quotation;
     drop table if exists delete_log;
     drop table if exists delivery_note;
     drop table if exists delivery_note_inv_item;
@@ -1344,25 +1313,18 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     drop table if exists gate_entry;
     drop table if exists gift_coupon;
     drop table if exists gift_voucher;
-    drop table if exists goods_inward_note;
-    drop table if exists gst_txn;
     drop table if exists incentive_range;
-    drop table if exists inventory_opening;
     drop table if exists material_conversion;
     drop table if exists material_conversion_inv_item;
     drop table if exists member_role;
     drop table if exists offer_management;
     drop table if exists organization_old;
-    drop table if exists personal_use_purchase_inv_item;
-    drop table if exists personal_use_purchase;
     drop table if exists pos_offline_voucher;
     drop table if exists pos_server;
     drop table if exists power_bi;
     drop table if exists price_list_condition;
     drop table if exists price_list;
     drop table if exists shipment;
-    drop table if exists stock_journal;
-    drop table if exists stock_journal_inv_item;
     drop table if exists stock_value;
     drop table if exists stock_value_opening;
     drop table if exists sales_emi_reconciliation_voucher;
@@ -1606,11 +1568,6 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         alter table batch drop column if exists warehouse_id;
         alter table batch rename column warehouse_oid to warehouse_id;
         alter table batch alter column warehouse_id set not null;
-        alter table batch drop column if exists id; -- check_again
-        --
-        alter table inv_txn drop column if exists warehouse_id;
-        alter table inv_txn rename column warehouse_oid to warehouse_id;
-        alter table inv_txn alter column warehouse_id set not null;
 -- MEMBER
     alter table member drop column if exists id;
     alter table member rename column oid_id to id;
@@ -1631,6 +1588,7 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
 -- BATCH
     alter table batch add column if not exists old_id int;
     update batch set old_id = id;
+    alter table batch drop column if exists id;
     alter table batch add unique (inventory_id, branch_id, warehouse_id, batch_no, vendor_id);
 -- PRINT_TEMPLATE
     alter table print_template drop column if exists id;
@@ -1663,11 +1621,15 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         alter table udm_pos_session drop column if exists settlement_id;
         alter table udm_pos_session rename column settlement_oid to settlement_id;
 -- UDM_DOCTOR
+    alter table udm_doctor add column if not exists old_id int;
+    update udm_doctor set old_id = id;
     alter table udm_doctor drop column if exists id;
     alter table udm_doctor rename column oid_id to id;
     alter table udm_doctor alter column id set not null;
     alter table udm_doctor add constraint udm_doctor_pkey primary key (id);
 -- UDM_DRUG_CLASSIFICATION
+    alter table udm_drug_classification add column if not exists old_id int;
+    update udm_drug_classification set old_id = id;
     alter table udm_drug_classification drop column if exists id;
     alter table udm_drug_classification rename column oid_id to id;
     alter table udm_drug_classification alter column id set not null;
@@ -1690,51 +1652,6 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
     alter table udm_wanted_item add constraint udm_wanted_item_pkey primary key (id);
 
 select now() as time, 'RENAMING AND DROPPING UUID COLUMN END' as msg;
--- -------------------------------------------------------------------------------------------------
--- ---- INDEX RESTORE
--- -------------------------------------------------------------------------------------------------
--- select now() as time, 'ADDING REQUIRED INDEX START' as msg;
--- --## ac_txn
---     create index on ac_txn (voucher_id);
---     create index on ac_txn (date);
---     create index on ac_txn (account_id);
---     create index on ac_txn (branch_id);
--- --## account
---     create index on account (val_name);
---     create index on account (transaction_enabled);
---     create index on account (mobile);
--- --## bank_txn
---     create index on bank_txn (date);
---     drop index if exists bank_txn_ac_txn_id;
---     create index on bank_txn (ac_txn_id);
---     create index on bank_txn (account_id);
---     create index on bank_txn (voucher_id);
--- --## batch
---     drop index if exists batch_barcode;
---     create index on batch (barcode);
---     create index on batch (inventory_id, branch_id, warehouse_id);
--- --## bill_allocation
---     create index on bill_allocation (eff_date);
---     drop index if exists bill_allocation_ac_txn_id;
---     create index on bill_allocation (ac_txn_id);
---     create index on bill_allocation (account_id);
---     create index on bill_allocation (voucher_id);
---     create index on bill_allocation (branch_id, account_id, ref_no);
--- --## inv_txn
---     create index on inv_txn (voucher_id);
---     create index on inv_txn (date);
---     create index on inv_txn (inventory_id);
---     create index on inv_txn (branch_id);
---     create index on inv_txn (inventory_id, branch_id, warehouse_id, batch_no, vendor_id);
--- --## inventory
---     create index on inventory (val_name);
--- --## voucher
---     create index on voucher (date);
---     create index on voucher (voucher_no);
---     create index on voucher (branch_id);
---     create index on voucher (base_voucher_type);
--- select now() as time, 'ADDING REQUIRED INDEX END' as msg;
---## last query
 
 -- delete from unit_conversion where conversion = 1;
 

@@ -1568,7 +1568,6 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         alter table batch drop column if exists warehouse_id;
         alter table batch rename column warehouse_oid to warehouse_id;
         alter table batch alter column warehouse_id set not null;
-        alter table batch drop column if exists id; -- check_again
 -- MEMBER
     alter table member drop column if exists id;
     alter table member rename column oid_id to id;
@@ -1653,51 +1652,6 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
     alter table udm_wanted_item add constraint udm_wanted_item_pkey primary key (id);
 
 select now() as time, 'RENAMING AND DROPPING UUID COLUMN END' as msg;
--- -------------------------------------------------------------------------------------------------
--- ---- INDEX RESTORE
--- -------------------------------------------------------------------------------------------------
--- select now() as time, 'ADDING REQUIRED INDEX START' as msg;
--- --## ac_txn
---     create index on ac_txn (voucher_id);
---     create index on ac_txn (date);
---     create index on ac_txn (account_id);
---     create index on ac_txn (branch_id);
--- --## account
---     create index on account (val_name);
---     create index on account (transaction_enabled);
---     create index on account (mobile);
--- --## bank_txn
---     create index on bank_txn (date);
---     drop index if exists bank_txn_ac_txn_id;
---     create index on bank_txn (ac_txn_id);
---     create index on bank_txn (account_id);
---     create index on bank_txn (voucher_id);
--- --## batch
---     drop index if exists batch_barcode;
---     create index on batch (barcode);
---     create index on batch (inventory_id, branch_id, warehouse_id);
--- --## bill_allocation
---     create index on bill_allocation (eff_date);
---     drop index if exists bill_allocation_ac_txn_id;
---     create index on bill_allocation (ac_txn_id);
---     create index on bill_allocation (account_id);
---     create index on bill_allocation (voucher_id);
---     create index on bill_allocation (branch_id, account_id, ref_no);
--- --## inv_txn
---     create index on inv_txn (voucher_id);
---     create index on inv_txn (date);
---     create index on inv_txn (inventory_id);
---     create index on inv_txn (branch_id);
---     create index on inv_txn (inventory_id, branch_id, warehouse_id, batch_no, vendor_id);
--- --## inventory
---     create index on inventory (val_name);
--- --## voucher
---     create index on voucher (date);
---     create index on voucher (voucher_no);
---     create index on voucher (branch_id);
---     create index on voucher (base_voucher_type);
--- select now() as time, 'ADDING REQUIRED INDEX END' as msg;
---## last query
 
 -- delete from unit_conversion where conversion = 1;
 
@@ -2066,7 +2020,7 @@ SET metadata = jsonb_set(
         'true'::jsonb,
         true
                )
-WHERE account_id IN ('67a69e800000000000000000', '67a7f0000000000000000000', '67a941800000000000000000')
+WHERE account_id IN (12, 13, 14)
   AND base_voucher_type IN (
                             'SALE',
                             'PURCHASE',
@@ -2347,6 +2301,7 @@ where b.customer_id is not null
 select now() as time, 'inv_txn set customer from sale_bill end' as msg;
 --##
 select now() as time, 'inv_txn set data from stock_journal_inv_item start' as msg;
+create index on batch (old_id);
 update inv_txn t
 set sno                         = i.sno,
     qty                         = i.qty,

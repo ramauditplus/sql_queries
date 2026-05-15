@@ -155,7 +155,7 @@ SET warehouse_id   = w.id,
     vendor_id      = a.id,
     vendor_name    = b.vendor_name,
     branch_oid     = br.id,
-    particulars    = COALESCE(b.vendor_name, v.particulars)
+    particulars    = b.vendor_name
 FROM goods_inward_note b
     LEFT JOIN warehouse w ON w.old_id = b.warehouse_id
     LEFT JOIN account a   ON a.old_id = b.vendor_id
@@ -329,7 +329,7 @@ SET metadata = jsonb_set(
         'true'::jsonb,
         true
                )
-WHERE account_id IN ('67a69e800000000000000000', '67a7f0000000000000000000', '67a941800000000000000000')
+WHERE account_id IN (12, 13, 14)
   AND base_voucher_type IN (
                             'SALE',
                             'PURCHASE',
@@ -590,7 +590,7 @@ UPDATE inv_txn t
 SET udf_drug_classifications = (
         SELECT array_agg(d.id)
         FROM udm_drug_classification d
-        WHERE d.id = ANY(a.drug_classifications)
+        WHERE d.old_id = ANY(a.drug_classifications)
     )
 FROM a
 WHERE t.id = a.id;
@@ -610,6 +610,7 @@ where b.customer_id is not null
 select now() as time, 'inv_txn set customer from sale_bill end' as msg;
 --##
 select now() as time, 'inv_txn set data from stock_journal_inv_item start' as msg;
+create index on batch (old_id);
 update inv_txn t
 set sno                         = i.sno,
     qty                         = i.qty,
@@ -747,6 +748,25 @@ select now() as time, 'OID_CHANGES FOR BILL_ALLOCATION STARTS' as msg;
 ---- DROP UNWANTED COLUMN, EXPRESSION, DEFAULT
 -------------------------------------------------------------------------------------------------
 select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
+-- BANK_TXN --
+    alter table bank_txn alter column credit drop expression;
+    alter table bank_txn alter column debit drop expression;
+    alter table bank_txn drop column if exists in_favour_of;
+    alter table bank_txn drop column if exists base_account_types;
+    alter table bank_txn drop column if exists alt_account_name;
+    alter table bank_txn drop column if exists bank_beneficiary_id;
+    alter table bank_txn drop column if exists epayment_tran_ref;
+    alter table bank_txn drop column if exists epayment_req_ref;
+    alter table bank_txn drop column if exists epayment_status;
+    alter table bank_txn drop column if exists bank_ref_no;
+    alter table bank_txn drop column if exists bank_particulars;
+-- BILL_ALLOCATION --
+    alter table bill_allocation drop column if exists base_account_types;
+    alter table bill_allocation drop column if exists pending;
+    alter table bill_allocation drop column if exists old_ref_no;
+    alter table bill_allocation drop column if exists is_approved;
+    alter table bill_allocation drop column if exists account_type_name;
+    alter table bill_allocation drop column if exists bill_date;
 -- AC_TXN --
     alter table ac_txn alter column amount drop expression;
     alter table ac_txn drop column if exists is_opening;
@@ -792,7 +812,22 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table voucher drop column if exists pos_counter_session_id;
     alter table voucher drop column if exists session;
     alter table voucher drop column if exists pos_counter_settlement_id;
-
+--DROP OR MODIFY TABLE--
+    drop table if exists credit_note;
+    drop table if exists debit_note;
+    drop table if exists debit_note_inv_item;
+    drop table if exists purchase_bill;
+    drop table if exists purchase_bill_inv_item;
+    drop table if exists sale_bill;
+    drop table if exists sale_bill_inv_item;
+    drop table if exists sale_quotation;
+    drop table if exists goods_inward_note;
+    drop table if exists gst_txn;
+    drop table if exists inventory_opening;
+    drop table if exists personal_use_purchase_inv_item;
+    drop table if exists personal_use_purchase;
+    drop table if exists stock_journal;
+    drop table if exists stock_journal_inv_item;
 
 -------------------------------------------------------------------------------------------------
 ---- DROP UNWANTED COLUMN AND RENAME THE REQUIRED ONE
@@ -945,6 +980,7 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
     --
     alter table batch drop column if exists old_id; -- check_again
     alter table batch drop column if exists txn_id;
+    alter table batch drop column if exists inv_retail_qty;
     --
 -- UDM_DOCTOR
     --
@@ -957,6 +993,10 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
 -- UDM_POS_COUNTER_SETTLEMENT
     --
     alter table udm_pos_counter_settlement drop column if exists old_id;
+    --
+-- UDM_DRUG_CLASSIFICATION
+    --
+    alter table udm_drug_classification drop column if exists old_id;
     --
 select now() as time, 'RENAMING AND DROPPING UUID COLUMN END' as msg;
 
