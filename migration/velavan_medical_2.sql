@@ -279,6 +279,15 @@ select now() as time, 'OID_CHANGES FOR VOUCHER VOUCHER_TYPE_ID ENDS' as msg;
 create index on voucher (voucher_type_id, voucher_type_oid);
 UPDATE voucher b SET voucher_type_oid = a.id FROM voucher_type a WHERE a.old_id = b.voucher_type_id and voucher_type_oid is null;
 --##
+UPDATE voucher v
+SET party_gst_no          = a.gst_no,
+    party_gst_location_id = a.gst_location_id,
+    party_gst_reg_type    = a.gst_reg_type
+FROM account a
+WHERE v.vendor_id = a.old_id
+  AND v.base_voucher_type = 'PURCHASE'
+  AND v.party_gst_no IS NULL;
+--##
 select now() as time, 'OID_CHANGES FOR VOUCHER ENDS' as msg;
 ------------------
 --## VOUCHER
