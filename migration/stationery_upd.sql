@@ -1276,15 +1276,17 @@ WHERE v.id = b.voucher_id;
 UPDATE voucher v
 SET warehouse_id            = w.oid_id,
     warehouse_name          = b.warehouse_name,
-    udf_alt_branch_id       = br.oid_id,
-    udf_alt_warehouse_id    = w.oid_id,
+    udf_alt_branch_id       = altbr.oid_id,
+    udf_alt_warehouse_id    = altw.oid_id,
     udf_transfer_voucher_id = tv.oid_id,
     udf_approved            = b.approved,
-    branch_oid             = br.oid_id,
-    voucher_type_oid       = vt.oid_id
+    branch_oid              = br.oid_id,
+    voucher_type_oid        = vt.oid_id
 FROM stock_journal b
     LEFT JOIN warehouse w ON w.id = b.warehouse_id
     LEFT JOIN branch br   ON br.id = b.branch_id
+    LEFT JOIN warehouse altw ON altw.id = b.alt_warehouse_id
+    LEFT JOIN branch altbr ON altbr.id = b.alt_branch_id
     LEFT JOIN voucher tv  ON tv.id = b.transfer_voucher_id
     LEFT JOIN voucher_type vt on vt.id = b.voucher_type_id
 WHERE v.id = b.voucher_id;
