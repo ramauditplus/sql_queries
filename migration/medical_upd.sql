@@ -1297,7 +1297,7 @@ SET warehouse_id   = w.oid_id,
     vendor_id      = a.oid_id,
     vendor_name    = b.vendor_name,
     branch_oid     = br.oid_id,
-    particulars    = COALESCE(b.vendor_name, v.particulars)
+    particulars    = b.vendor_name
 FROM goods_inward_note b
     LEFT JOIN warehouse w ON w.id = b.warehouse_id
     LEFT JOIN account a   ON a.id = b.vendor_id
