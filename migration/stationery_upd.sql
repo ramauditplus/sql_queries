@@ -1049,6 +1049,12 @@ select 'batch', coalesce(max(id), 0)
 from batch
 on conflict (model_name)
 do update set seq = excluded.seq;
+--##
+insert into sequence (model_name, seq)
+select 'sales_person', coalesce(max(id), 0)
+from sales_person
+on conflict (model_name)
+do update set seq = excluded.seq;
 --## SEQUENCE
 select now() as time, 'SEQUENCE TABLE ALTER ENDS' as msg;
 ---------------------------------------------------------------------------
