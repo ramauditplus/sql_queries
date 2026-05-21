@@ -549,6 +549,10 @@ ALTER TABLE inventory ADD COLUMN IF NOT EXISTS oid_id text DEFAULT oid();
 --##
 ALTER TABLE sales_person ADD COLUMN IF NOT EXISTS oid_id text DEFAULT oid();
 --##
+alter table sales_person add column code integer;
+update sales_person set code = id;
+alter table sales_person alter column code set not null;
+--##
 ALTER TABLE tds_nature_of_payment  ADD COLUMN IF NOT EXISTS oid_id text DEFAULT oid();
 
 --## MODIFY_TABLE
