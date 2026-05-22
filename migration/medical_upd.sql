@@ -1451,30 +1451,30 @@ select now() as time, 'OID_CHANGES FOR AC_TXN STARTS' as msg;
 create index on gst_txn (ac_txn_id);
 -- ac_txn field related changes
 alter table ac_txn
-    add if not exists qty            float,
-    add if not exists item_name      text,
-    add if not exists hsn_code       text,
-    add if not exists uqc            text,
-    add if not exists gst_tax        text,
-    add if not exists gst_ratio      float,
-    add if not exists taxable_amount float,
-    add if not exists cgst_amount    float,
-    add if not exists sgst_amount    float,
-    add if not exists igst_amount    float,
-    add if not exists cess_amount    float;
+    add if not exists qty               float,
+    add if not exists gst_description   text,
+    add if not exists hsn_code          text,
+    add if not exists uqc               text,
+    add if not exists gst_tax           text,
+    add if not exists gst_ratio         float,
+    add if not exists taxable_amount    float,
+    add if not exists cgst_amount       float,
+    add if not exists sgst_amount       float,
+    add if not exists igst_amount       float,
+    add if not exists cess_amount       float;
 --##
 UPDATE ac_txn a
-SET qty            = g.qty,
-    item_name      = g.item_name,
-    gst_tax        = g.gst_tax,
-    gst_ratio      = g.tax_ratio,
-    hsn_code       = g.hsn_code,
-    uqc            = g.uqc,
-    taxable_amount = g.taxable_amount,
-    cgst_amount    = g.cgst_amount,
-    sgst_amount    = g.sgst_amount,
-    igst_amount    = g.igst_amount,
-    cess_amount    = g.cess_amount
+SET qty             = g.qty,
+    gst_description = g.item_name,
+    gst_tax         = g.gst_tax,
+    gst_ratio       = g.tax_ratio,
+    hsn_code        = g.hsn_code,
+    uqc             = g.uqc,
+    taxable_amount  = g.taxable_amount,
+    cgst_amount     = g.cgst_amount,
+    sgst_amount     = g.sgst_amount,
+    igst_amount     = g.igst_amount,
+    cess_amount     = g.cess_amount
 FROM gst_txn g
 WHERE a.id = g.ac_txn_id;
 --##
