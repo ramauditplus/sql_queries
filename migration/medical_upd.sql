@@ -2023,7 +2023,7 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table batch drop column if exists inv_retail_qty;
 -- BILL_ALLOCATION --
     alter table bill_allocation drop column if exists base_account_types;
-    alter table bill_allocation drop column if exists pending; -- check_again
+    -- alter table bill_allocation drop column if exists pending; -- check_again
     alter table bill_allocation drop column if exists old_ref_no;
     alter table bill_allocation drop column if exists is_approved;
     alter table bill_allocation drop column if exists account_type_name;
