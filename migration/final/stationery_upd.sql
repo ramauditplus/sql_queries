@@ -13,7 +13,7 @@ begin
 end;
 $$ language plpgsql;
 --##
-select now() as time, 'PART - I - MIGRATION START' as msg;
+select now() as time, 'MIGRATION START' as msg;
 --##
 select now() as time, 'general_migration_start' as msg;
 -- REMOVE RECORDS RELATED TO UNWANTED TABLE
@@ -163,8 +163,8 @@ alter table organization
     add if not exists oid_id text,
     add if not exists created_by text,
     add if not exists updated_by text,
-    add if not exists email_config jsonb,
-    add if not exists udf_wanted_item_config jsonb;
+    add if not exists email_config jsonb;
+    -- add if not exists udf_wanted_item_config jsonb;
 --##
 UPDATE organization SET oid_id = oid() where true;
 --##
@@ -178,11 +178,11 @@ SET email_config = configuration -> 'email_config',
 WHERE configuration IS NOT NULL
   AND configuration ? 'email_config';
 --##
-UPDATE organization
-SET udf_wanted_item_config = configuration -> 'wanted_note_config',
-    configuration = configuration - 'wanted_note_config'
-WHERE configuration IS NOT NULL
-  AND configuration ? 'wanted_note_config';
+-- UPDATE organization
+-- SET udf_wanted_item_config = configuration -> 'wanted_note_config',
+--    configuration = configuration - 'wanted_note_config'
+-- WHERE configuration IS NOT NULL
+--  AND configuration ? 'wanted_note_config';
 --## ORGANIZATION
 
 --## GSTR_2B
@@ -556,17 +556,17 @@ alter table sales_person alter column code set not null;
 ALTER TABLE tds_nature_of_payment  ADD COLUMN IF NOT EXISTS oid_id text DEFAULT oid();
 
 --## MODIFY_TABLE
-alter table vendor_bill_map rename to udm_vendor_bill_map;
-alter table vendor_item_map rename to udm_vendor_item_map;
-alter table wanted_note rename to udm_wanted_item;
+drop table if exists vendor_bill_map;
+drop table if exists vendor_item_map;
+drop table if exists wanted_note;
 --
--- drop table if exists doctor;
-alter table doctor rename to udm_doctor;
-    alter table udm_doctor drop if exists display_name;
-    alter table udm_doctor drop if exists alias_name;
-    alter table udm_doctor drop if exists age;
-alter table if exists drug_classification rename to udm_drug_classification;
-alter table if exists inventory_composition rename to udm_inventory_composition;
+drop table if exists doctor;
+-- alter table doctor rename to udm_doctor;
+--     alter table udm_doctor drop if exists display_name;
+--     alter table udm_doctor drop if exists alias_name;
+--     alter table udm_doctor drop if exists age;
+drop table if exists drug_classification;
+drop table if exists inventory_composition;
 --
 alter table pos_counter rename to udm_pos_counter;
 alter table pos_counter_session rename to udm_pos_session;
@@ -575,18 +575,18 @@ alter table pos_counter_settlement rename to udm_pos_counter_settlement;
 
 --
 --## f_key
-alter table udm_vendor_bill_map
-    rename constraint vendor_bill_map_pkey to udm_vendor_bill_map_pkey;
-alter table udm_vendor_item_map
-    rename constraint vendor_item_map_pkey to udm_vendor_item_map_pkey;
-alter table udm_doctor
-    rename constraint doctor_pkey to udm_doctor_pkey;
-alter table udm_drug_classification
-    rename constraint drug_classification_pkey to udm_drug_classification_pkey;
-alter table udm_inventory_composition
-    rename constraint inventory_composition_pkey to udm_inventory_composition_pkey;
-alter table udm_wanted_item
-    rename constraint wanted_note_pkey to udm_wanted_item_pkey;
+-- alter table udm_vendor_bill_map
+--     rename constraint vendor_bill_map_pkey to udm_vendor_bill_map_pkey;
+-- alter table udm_vendor_item_map
+--     rename constraint vendor_item_map_pkey to udm_vendor_item_map_pkey;
+-- alter table udm_doctor
+--     rename constraint doctor_pkey to udm_doctor_pkey;
+-- alter table udm_drug_classification
+--     rename constraint drug_classification_pkey to udm_drug_classification_pkey;
+-- alter table udm_inventory_composition
+--     rename constraint inventory_composition_pkey to udm_inventory_composition_pkey;
+-- alter table udm_wanted_item
+--    rename constraint wanted_note_pkey to udm_wanted_item_pkey;
 alter table udm_pos_counter
     rename constraint pos_counter_pkey to udm_pos_counter_pkey;
 alter table udm_pos_session
@@ -651,21 +651,21 @@ alter table udm_pos_counter_settlement
     ALTER TABLE udm_pos_session ALTER COLUMN updated_by TYPE text USING '677485800000000000000000'::text;
     ALTER TABLE udm_pos_counter_settlement ALTER COLUMN created_by TYPE text USING '677485800000000000000000'::text;
     ALTER TABLE udm_pos_counter_settlement ALTER COLUMN updated_by TYPE text USING '677485800000000000000000'::text;
-    ALTER TABLE udm_wanted_item ALTER COLUMN created_by TYPE text USING '677485800000000000000000'::text;
-    ALTER TABLE udm_wanted_item ALTER COLUMN updated_by TYPE text USING '677485800000000000000000'::text;
-    ALTER TABLE udm_doctor ALTER COLUMN created_by TYPE text USING '677485800000000000000000'::text;
-    ALTER TABLE udm_doctor ALTER COLUMN updated_by TYPE text USING '677485800000000000000000'::text;
-    ALTER TABLE udm_drug_classification ALTER COLUMN created_by TYPE text USING '677485800000000000000000'::text;
-    ALTER TABLE udm_drug_classification ALTER COLUMN updated_by TYPE text USING '677485800000000000000000'::text;
-    ALTER TABLE udm_inventory_composition ALTER COLUMN created_by TYPE text USING '677485800000000000000000'::text;
-    ALTER TABLE udm_inventory_composition ALTER COLUMN updated_by TYPE text USING '677485800000000000000000'::text;
+--     ALTER TABLE udm_wanted_item ALTER COLUMN created_by TYPE text USING '677485800000000000000000'::text;
+--     ALTER TABLE udm_wanted_item ALTER COLUMN updated_by TYPE text USING '677485800000000000000000'::text;
+--     ALTER TABLE udm_doctor ALTER COLUMN created_by TYPE text USING '677485800000000000000000'::text;
+--     ALTER TABLE udm_doctor ALTER COLUMN updated_by TYPE text USING '677485800000000000000000'::text;
+--     ALTER TABLE udm_drug_classification ALTER COLUMN created_by TYPE text USING '677485800000000000000000'::text;
+--     ALTER TABLE udm_drug_classification ALTER COLUMN updated_by TYPE text USING '677485800000000000000000'::text;
+--     ALTER TABLE udm_inventory_composition ALTER COLUMN created_by TYPE text USING '677485800000000000000000'::text;
+--     ALTER TABLE udm_inventory_composition ALTER COLUMN updated_by TYPE text USING '677485800000000000000000'::text;
 
 ALTER TABLE financial_year ADD COLUMN IF NOT EXISTS oid_id text DEFAULT oid();
 ALTER TABLE print_template ADD COLUMN IF NOT EXISTS oid_id text DEFAULT oid();
-ALTER TABLE udm_wanted_item ADD COLUMN IF NOT EXISTS oid_id text DEFAULT oid();
-ALTER TABLE udm_doctor ADD COLUMN IF NOT EXISTS oid_id text DEFAULT oid();
-ALTER TABLE udm_drug_classification ADD COLUMN IF NOT EXISTS oid_id text DEFAULT oid();
-ALTER TABLE udm_inventory_composition ADD COLUMN IF NOT EXISTS oid_id text DEFAULT oid();
+-- ALTER TABLE udm_wanted_item ADD COLUMN IF NOT EXISTS oid_id text DEFAULT oid();
+-- ALTER TABLE udm_doctor ADD COLUMN IF NOT EXISTS oid_id text DEFAULT oid();
+-- ALTER TABLE udm_drug_classification ADD COLUMN IF NOT EXISTS oid_id text DEFAULT oid();
+-- ALTER TABLE udm_inventory_composition ADD COLUMN IF NOT EXISTS oid_id text DEFAULT oid();
 ALTER TABLE udm_pos_session  ADD COLUMN IF NOT EXISTS oid_id text DEFAULT oid();
 ALTER TABLE udm_pos_counter_settlement  ADD COLUMN IF NOT EXISTS oid_id text DEFAULT oid();
 
@@ -693,6 +693,28 @@ select now() as time, 'CHANGES FOR ACCOUNT ENDS' as msg;
 ---------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------
+--## BANK_TXN
+select now() as time, 'OID_CHANGES FOR BANK_TXN STARTS' as msg;
+-- bank_txn field related changes
+alter table bank_txn alter column sno type integer using sno::integer;
+alter table bank_txn alter column is_memo set not null;
+-- bank_txn oid related changes
+ALTER TABLE bank_txn ADD COLUMN IF NOT EXISTS account_oid text;
+ALTER TABLE bank_txn ADD COLUMN IF NOT EXISTS alt_account_oid text;
+ALTER TABLE bank_txn ADD COLUMN IF NOT EXISTS branch_oid text;
+ALTER TABLE bank_txn ADD COLUMN IF NOT EXISTS voucher_oid text;
+ALTER TABLE bank_txn ADD COLUMN IF NOT EXISTS ac_txn_oid text;
+------------------
+    UPDATE bank_txn b SET account_oid = a.oid_id FROM account a WHERE a.id = b.account_id;
+    UPDATE bank_txn b SET alt_account_oid = a.oid_id FROM account a WHERE a.id = b.alt_account_id;
+    UPDATE bank_txn b SET branch_oid = a.oid_id FROM branch a WHERE a.id = b.branch_id;
+    UPDATE bank_txn b SET voucher_oid = a.oid_id FROM voucher a WHERE a.id = b.voucher_id;
+    UPDATE bank_txn b SET ac_txn_oid = a.oid_id FROM ac_txn a WHERE a.id = b.ac_txn_id;
+select now() as time, 'OID_CHANGES FOR BANK_TXN ENDS' as msg;
+--## BANK_TXN
+---------------------------------------------------------------------------
+
+---------------------------------------------------------------------------
 --## INVENTORY
 select now() as time, 'OID_CHANGES FOR INVENTORY STARTS' as msg;
 -- inventory field related changes
@@ -702,7 +724,7 @@ alter table inventory
     add if not exists sub_category_id  text,
     add if not exists cess_qty    float,
     add if not exists cess_value  float;
-alter table inventory rename column compositions to udf_compositions;
+alter table inventory drop column if exists compositions;
 --##
 update inventory
 set cess_qty   = (cess ->> 'on_quantity')::double precision,
@@ -719,7 +741,7 @@ ALTER TABLE inventory ADD COLUMN IF NOT EXISTS division_oid text;
 ALTER TABLE inventory ADD COLUMN IF NOT EXISTS unit_oid text;
 ALTER TABLE inventory ADD COLUMN IF NOT EXISTS sale_unit_oid text;
 ALTER TABLE inventory ADD COLUMN IF NOT EXISTS purchase_unit_oid text;
-ALTER TABLE inventory ADD COLUMN IF NOT EXISTS udf_compositions_oid text[];
+-- ALTER TABLE inventory ADD COLUMN IF NOT EXISTS udf_compositions_oid text[];
 ------------------
     UPDATE inventory b SET sale_account_oid = a.oid_id FROM account a WHERE a.id = b.sale_account_id and a.transaction_enabled;
     UPDATE inventory b SET purchase_account_oid = a.oid_id FROM account a WHERE a.id = b.purchase_account_id and a.transaction_enabled;
@@ -732,13 +754,13 @@ ALTER TABLE inventory ADD COLUMN IF NOT EXISTS udf_compositions_oid text[];
     SET unit_oid          = (select id from unit where symbol = '1'),
         sale_unit_oid     = (select id from unit where symbol = '1'),
         purchase_unit_oid = (select id from unit where symbol = '1');
-    UPDATE inventory t
-        SET udf_compositions_oid =
-                (SELECT array_agg(udm_inventory_composition.oid_id)
-                 FROM unnest(t.udf_compositions) AS u(class_id)
-                          JOIN udm_inventory_composition
-                               ON udm_inventory_composition.id = u.class_id)
-        WHERE t.udf_compositions IS NOT NULL;
+--     UPDATE inventory t
+--         SET udf_compositions_oid =
+--                 (SELECT array_agg(udm_inventory_composition.oid_id)
+--                  FROM unnest(t.udf_compositions) AS u(class_id)
+--                           JOIN udm_inventory_composition
+--                                ON udm_inventory_composition.id = u.class_id)
+--         WHERE t.udf_compositions IS NOT NULL;
 select now() as time, 'OID_CHANGES FOR INVENTORY ENDS' as msg;
 --
     alter table inventory drop column if exists manufacturer_id;
@@ -762,14 +784,14 @@ from price_list_condition y
 where x.inventory_id = y.inventory_id
   and (x.branch_id = any (y.branches) or y.branches is null or array_length(y.branches, 1) = 0);
 --##
-alter table inventory_branch_detail alter column reorder_mode drop not null;
+-- alter table inventory_branch_detail alter column reorder_mode drop not null;
 --##
-alter table inventory_branch_detail alter column reorder_level drop not null;
+-- alter table inventory_branch_detail alter column reorder_level drop not null;
 --##
-alter table inventory_branch_detail rename reorder_mode to udf_reorder_mode;
-alter table inventory_branch_detail rename reorder_level to udf_reorder_level;
-alter table inventory_branch_detail rename min_order to udf_min_order;
-alter table inventory_branch_detail rename max_order to udf_max_order;
+alter table inventory_branch_detail drop if exists reorder_mode;
+alter table inventory_branch_detail drop if exists reorder_level;
+alter table inventory_branch_detail drop if exists min_order;
+alter table inventory_branch_detail drop if exists max_order;
 -- inventory_branch_detail oid related changes
 ALTER TABLE inventory_branch_detail ADD COLUMN IF NOT EXISTS preferred_vendor_oid text;
 ALTER TABLE inventory_branch_detail ADD COLUMN IF NOT EXISTS last_vendor_oid text;
@@ -859,7 +881,7 @@ select now() as time, 'text_changes for udm_pos_session ends' as msg;
 --## UDM_POS_SESSION
 ---------------------------------------------------------------------------
 
---/*
+/*
 ---------------------------------------------------------------------------
 --## UDM_VENDOR_ITEM_MAP
 select now() as time, 'OID_CHANGES FOR UDM_VENDOR_ITEM_MAP STARTS' as msg;
@@ -919,7 +941,7 @@ ALTER TABLE udm_wanted_item ADD COLUMN IF NOT EXISTS inventory_oid text;
 select now() as time, 'OID_CHANGES FOR UDM_WANTED_ITEM ENDS' as msg;
 --## UDM_WANTED_ITEM
 ---------------------------------------------------------------------------
---*/
+*/
 
 ---------------------------------------------------------------------------
 --## ACCOUNT_DAILY_SUMMARY
@@ -1149,10 +1171,788 @@ select now() as time, 'OID_CHANGES FOR BATCH ENDS' as msg;
 --## BATCH
 ---------------------------------------------------------------------------
 
+---------------------------------------------------------------------------
+--## VOUCHER
+select now() as time, 'OID_CHANGES FOR VOUCHER STARTS' as msg;
+-- voucher field related changes
+alter table voucher rename column party_name to particulars;
+--
+alter table voucher
+    add if not exists metadata                     jsonb,
+    add if not exists branch_gst_reg_type          text,
+    add if not exists branch_gst_location_id       text,
+    add if not exists branch_gst_no                text,
+    add if not exists party_gst_reg_type           text,
+    add if not exists party_gst_location_id        text,
+    add if not exists party_gst_no                 text,
+    add if not exists gst_location_type            text,
+    add if not exists vendor_id                    text,
+    add if not exists vendor_name                  text,
+    add if not exists customer_id                  text,
+    add if not exists customer_name                text,
+    add if not exists warehouse_id                 text,
+    add if not exists warehouse_name               text,
+    add if not exists rounded_off                  float,
+    add if not exists disc_mode                    text,
+    add if not exists discount                     float,
+    add if not exists sales_person_id              text,
+    add if not exists sale_value                   float,
+    add if not exists profit_value                 float,
+    add if not exists nlc_value                    float,
+    add if not exists valid_provisional_profit     bool,
+    add if not exists udf_alt_branch_id            text,
+    add if not exists udf_alt_warehouse_id         text,
+    add if not exists udf_transfer_voucher_id      text,
+    add if not exists udf_approved                 bool,
+    add if not exists branch_oid                  text,
+    add if not exists voucher_type_oid            text,
+    add if not exists udf_pos_counter_session_id   text,
+    add if not exists udf_pos_counter_settlement_id text;
+--     add if not exists udf_customer_mobile          text,
+--     add if not exists udf_reminder_date            date,
+--     add if not exists udf_doctor_id                text;
+--##
+alter table voucher rename pos_counter_code to udf_pos_counter_code;
+--##
+UPDATE voucher v
+set udf_pos_counter_session_id = b.oid_id
+from udm_pos_session b
+where v.pos_counter_session_id = b.id;
+--##
+UPDATE voucher v
+set udf_pos_counter_settlement_id = b.oid_id
+from udm_pos_counter_settlement b
+where v.pos_counter_settlement_id = b.id;
+--##
+UPDATE voucher a
+SET gst_location_type = CASE
+    WHEN g.gst_location_type = 'LOCAL' THEN 'INTRA'
+    WHEN g.gst_location_type = 'INTER_STATE' THEN 'INTER'
+END
+FROM gst_txn g
+WHERE a.id = g.voucher_id
+  AND g.gst_location_type IN ('LOCAL', 'INTER_STATE');
+--##
+UPDATE voucher v
+SET branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
+    branch_gst_location_id = b.branch_gst ->> 'location_id',
+    branch_gst_no          = b.branch_gst ->> 'gst_no',
+    party_gst_reg_type     = b.party_gst ->> 'reg_type',
+    party_gst_location_id  = b.party_gst ->> 'location_id',
+    party_gst_no           = b.party_gst ->> 'gst_no',
+    warehouse_id           = w.oid_id,
+    warehouse_name         = b.warehouse_name,
+    vendor_id              = a.oid_id,
+    vendor_name            = b.vendor_name,
+    disc_mode              = b.discount_mode,
+    discount               = b.discount_amount,
+    rounded_off            = b.rounded_off,
+    branch_oid             = br.oid_id,
+    voucher_type_oid       = vt.oid_id,
+    particulars            = COALESCE(b.vendor_name, v.particulars)
+FROM debit_note b
+    LEFT JOIN warehouse w ON b.warehouse_id = w.id
+    LEFT JOIN account a   ON b.vendor_id = a.id
+    LEFT JOIN branch br ON b.branch_id = br.id
+    LEFT JOIN voucher_type vt on b.voucher_type_id = vt.id
+WHERE v.id = b.voucher_id;
+--##
+UPDATE voucher v
+SET branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
+    branch_gst_location_id = b.branch_gst ->> 'location_id',
+    branch_gst_no          = b.branch_gst ->> 'gst_no',
+    party_gst_reg_type     = b.party_gst ->> 'reg_type',
+    party_gst_location_id  = b.party_gst ->> 'location_id',
+    party_gst_no           = b.party_gst ->> 'gst_no',
+    warehouse_id           = w.oid_id,
+    warehouse_name         = b.warehouse_name,
+    customer_id            = a.oid_id,
+    customer_name          = b.customer_name,
+    disc_mode              = b.discount_mode,
+    discount               = b.discount_amount,
+    rounded_off            = b.rounded_off,
+    sales_person_id        = sp.oid_id,
+    branch_oid             = br.oid_id,
+    voucher_type_oid       = vt.oid_id,
+    particulars            = COALESCE(b.customer_name, v.particulars)
+FROM credit_note b
+    LEFT JOIN warehouse w ON w.id = b.warehouse_id
+    LEFT JOIN account a   ON a.id = b.customer_id
+    LEFT JOIN sales_person sp on b.s_inc_id = sp.id
+    LEFT JOIN branch br ON b.branch_id = br.id
+    LEFT JOIN voucher_type vt on b.voucher_type_id = vt.id
+WHERE v.id = b.voucher_id;
+--##
+UPDATE voucher v
+SET warehouse_id            = w.oid_id,
+    warehouse_name          = b.warehouse_name,
+    udf_alt_branch_id       = altbr.oid_id,
+    udf_alt_warehouse_id    = altw.oid_id,
+    udf_transfer_voucher_id = tv.oid_id,
+    udf_approved            = b.approved,
+    branch_oid              = br.oid_id,
+    voucher_type_oid        = vt.oid_id
+FROM stock_journal b
+    LEFT JOIN warehouse w ON w.id = b.warehouse_id
+    LEFT JOIN branch br   ON br.id = b.branch_id
+    LEFT JOIN warehouse altw ON altw.id = b.alt_warehouse_id
+    LEFT JOIN branch altbr ON altbr.id = b.alt_branch_id
+    LEFT JOIN voucher tv  ON tv.id = b.transfer_voucher_id
+    LEFT JOIN voucher_type vt on vt.id = b.voucher_type_id
+WHERE v.id = b.voucher_id;
+--##
+UPDATE voucher v
+SET warehouse_id   = w.oid_id,
+    warehouse_name = b.warehouse_name,
+    vendor_id      = a.oid_id,
+    vendor_name    = b.vendor_name,
+    branch_oid     = br.oid_id,
+    particulars    = b.vendor_name
+FROM goods_inward_note b
+    LEFT JOIN warehouse w ON w.id = b.warehouse_id
+    LEFT JOIN account a   ON a.id = b.vendor_id
+    LEFT JOIN branch br   ON br.id = b.branch_id
+WHERE v.id = b.voucher_id;
+--##
+UPDATE voucher v
+SET branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
+    branch_gst_location_id = b.branch_gst ->> 'location_id',
+    branch_gst_no          = b.branch_gst ->> 'gst_no',
+    warehouse_id           = w.oid_id,
+    warehouse_name         = b.warehouse_name,
+    branch_oid            = br.oid_id,
+    voucher_type_oid      = vt.oid_id
+FROM personal_use_purchase b
+    LEFT JOIN warehouse w ON w.id = b.warehouse_id
+    LEFT JOIN branch br   ON br.id = b.branch_id
+    LEFT JOIN voucher_type vt on vt.id = b.voucher_type_id
+WHERE v.id = b.voucher_id;
+--##
+UPDATE voucher v
+SET branch_gst_reg_type      = b.branch_gst ->> 'reg_type',
+    branch_gst_location_id   = b.branch_gst ->> 'location_id',
+    branch_gst_no            = b.branch_gst ->> 'gst_no',
+    party_gst_reg_type       = b.party_gst ->> 'reg_type',
+    party_gst_location_id    = b.party_gst ->> 'location_id',
+    party_gst_no             = b.party_gst ->> 'gst_no',
+    warehouse_id             = w.oid_id,
+    warehouse_name           = b.warehouse_name,
+    vendor_id                = a.oid_id,
+    vendor_name              = b.vendor_name,
+    customer_id              = ac.oid_id,
+    customer_name            = b.customer_name,
+    rounded_off              = b.rounded_off,
+    disc_mode                = b.discount_mode,
+    discount                 = b.discount_amount,
+    sale_value               = b.sale_value,
+    profit_value             = b.profit_value,
+    nlc_value                = b.nlc_value,
+    valid_provisional_profit = b.valid_provisional_profit,
+    branch_oid               = br.oid_id,
+    voucher_type_oid         = vt.oid_id,
+    particulars              = COALESCE(b.vendor_name, v.particulars)
+FROM purchase_bill b
+    LEFT JOIN warehouse w ON b.warehouse_id = w.id
+    LEFT JOIN account a   ON b.vendor_id = a.id
+    LEFT JOIN account ac  ON b.customer_id = ac.id
+    LEFT JOIN branch br   ON br.id = b.branch_id
+    LEFT JOIN voucher_type vt on vt.id = b.voucher_type_id
+WHERE v.id = b.voucher_id;
+--##
+UPDATE voucher v
+SET branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
+    branch_gst_location_id = b.branch_gst ->> 'location_id',
+    branch_gst_no          = b.branch_gst ->> 'gst_no',
+    party_gst_reg_type     = b.party_gst ->> 'reg_type',
+    party_gst_location_id  = b.party_gst ->> 'location_id',
+    party_gst_no           = b.party_gst ->> 'gst_no',
+    warehouse_id           = w.oid_id,
+    warehouse_name         = b.warehouse_name,
+    customer_id            = a.oid_id,
+    customer_name          = b.customer_name,
+    disc_mode              = b.discount_mode,
+    discount               = b.discount_amount,
+    rounded_off            = b.rounded_off,
+    sales_person_id        = sp.oid_id,
+    branch_oid             = br.oid_id,
+    voucher_type_oid       = vt.oid_id,
+--     udf_customer_mobile    = a.mobile,
+--     udf_reminder_date      = b.date + b.reminder_days,
+--     udf_doctor_id          = ud.oid_id,
+    particulars            = COALESCE(b.customer_name, v.particulars)
+FROM sale_bill b
+    LEFT JOIN warehouse w     ON w.id = b.warehouse_id
+    LEFT JOIN account a       ON a.id = b.customer_id
+    LEFT JOIN sales_person sp ON sp.id = b.s_inc_id
+    LEFT JOIN branch br   ON br.id = b.branch_id
+    LEFT JOIN voucher_type vt on vt.id = b.voucher_type_id
+--     LEFT JOIN udm_doctor ud   ON ud.id = b.doctor_id
+WHERE v.id = b.voucher_id;
+--##
+--##
+UPDATE voucher v
+SET branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
+    branch_gst_location_id = b.branch_gst ->> 'location_id',
+    branch_gst_no          = b.branch_gst ->> 'gst_no',
+    party_gst_reg_type     = b.party_gst ->> 'reg_type',
+    party_gst_location_id  = b.party_gst ->> 'location_id',
+    party_gst_no           = b.party_gst ->> 'gst_no',
+    warehouse_id           = w.oid_id,
+    warehouse_name         = b.warehouse_name,
+    customer_id            = a.oid_id,
+    customer_name          = b.customer_name,
+    disc_mode              = b.discount_mode,
+    discount               = b.discount_amount,
+    rounded_off            = b.rounded_off,
+    sales_person_id        = sp.oid_id,
+    branch_oid             = br.oid_id,
+    voucher_type_oid       = vt.oid_id,
+    particulars            = COALESCE(b.customer_name, v.particulars)
+FROM sale_quotation b
+    LEFT JOIN warehouse w     ON w.id = b.warehouse_id
+    LEFT JOIN account a       ON a.id = b.customer_id
+    LEFT JOIN sales_person sp ON sp.id = b.s_inc_id
+    LEFT JOIN branch br   ON br.id = b.branch_id
+    LEFT JOIN voucher_type vt on vt.id = b.voucher_type_id
+WHERE v.id = b.voucher_id;
+
+--##
+alter table voucher
+    alter column mode set not null,
+    alter column e_invoice_details type jsonb using e_invoice_details::jsonb,
+    alter column eway_bill_details type jsonb using eway_bill_details::jsonb;
+------------------
+select now() as time, 'OID_CHANGES FOR VOUCHER BRANCH_ID STARTS' as msg;
+create index on voucher (branch_id, branch_oid);
+UPDATE voucher b SET branch_oid = a.oid_id FROM branch a WHERE a.id = b.branch_id and branch_oid is null;
+select now() as time, 'OID_CHANGES FOR VOUCHER BRANCH_ID ENDS' as msg;
+--##
+select now() as time, 'OID_CHANGES FOR VOUCHER VOUCHER_TYPE_ID ENDS' as msg;
+create index on voucher (voucher_type_id, voucher_type_oid);
+UPDATE voucher b SET voucher_type_oid = a.oid_id FROM voucher_type a WHERE a.id = b.voucher_type_id and voucher_type_oid is null;
+--##
+UPDATE voucher v
+SET party_gst_no          = a.gst_no,
+    party_gst_location_id = a.gst_location_id,
+    party_gst_reg_type    = a.gst_reg_type
+FROM account a
+WHERE v.vendor_id = a.oid_id
+  AND v.base_voucher_type = 'PURCHASE'
+  AND v.party_gst_no IS NULL;
+--##
+select now() as time, 'OID_CHANGES FOR VOUCHER ENDS' as msg;
+------------------
+--## VOUCHER
+---------------------------------------------------------------------------
+
+---------------------------------------------------------------------------
+--## AC_TXN
+select now() as time, 'OID_CHANGES FOR AC_TXN STARTS' as msg;
+create index on gst_txn (ac_txn_id);
+-- ac_txn field related changes
+alter table ac_txn
+    add if not exists qty               float,
+    add if not exists gst_description   text,
+    add if not exists hsn_code          text,
+    add if not exists uqc               text,
+    add if not exists gst_tax           text,
+    add if not exists gst_ratio         float,
+    add if not exists taxable_amount    float,
+    add if not exists cgst_amount       float,
+    add if not exists sgst_amount       float,
+    add if not exists igst_amount       float,
+    add if not exists cess_amount       float;
+--##
+UPDATE ac_txn a
+SET qty             = g.qty,
+    gst_description = g.item_name,
+    gst_tax         = g.gst_tax,
+    gst_ratio       = g.tax_ratio,
+    hsn_code        = g.hsn_code,
+    uqc             = g.uqc,
+    taxable_amount  = g.taxable_amount,
+    cgst_amount     = g.cgst_amount,
+    sgst_amount     = g.sgst_amount,
+    igst_amount     = g.igst_amount,
+    cess_amount     = g.cess_amount
+FROM gst_txn g
+WHERE a.id = g.ac_txn_id;
+--##
+alter table ac_txn
+    alter column is_memo set not null,
+    alter column metadata type jsonb using metadata::jsonb,
+    alter column sno type integer using sno::integer;
+--#
+UPDATE ac_txn
+SET metadata = jsonb_set(
+        COALESCE(metadata, '{}'::jsonb),
+        '{has_extra_account_adjustments}',
+        'true'::jsonb,
+        true
+               )
+WHERE account_id IN ('12', '13', '14')
+  AND base_voucher_type IN (
+                            'SALE',
+                            'PURCHASE',
+                            'CREDIT_NOTE',
+                            'DEBIT_NOTE'
+    );
+-- ac_txn text related changes
+ALTER TABLE ac_txn ADD COLUMN IF NOT EXISTS account_oid text;
+ALTER TABLE ac_txn ADD COLUMN IF NOT EXISTS alt_account_oid text;
+ALTER TABLE ac_txn ADD COLUMN IF NOT EXISTS account_type_oid text;
+ALTER TABLE ac_txn ADD COLUMN IF NOT EXISTS branch_oid text;
+ALTER TABLE ac_txn ADD COLUMN IF NOT EXISTS voucher_oid text;
+ALTER TABLE ac_txn ADD COLUMN IF NOT EXISTS voucher_type_oid text;
+--##
+select now() as time, 'OID_CHANGES FOR AC_TXN ACCOUNT_TYPE_ID AND ACCOUNT_ID STARTS' as msg;
+UPDATE ac_txn b SET account_oid = a.oid_id, account_type_oid = a.account_type_oid FROM account a WHERE a.id = b.account_id;
+select now() as time, 'OID_CHANGES FOR AC_TXN ACCOUNT_TYPE_ID AND ACCOUNT_ID ENDS' as msg;
+--##
+select now() as time, 'OID_CHANGES FOR AC_TXN ALT_ACCOUNT_ID STARTS' as msg;
+UPDATE ac_txn b SET alt_account_oid = a.oid_id FROM account a WHERE a.id = b.alt_account_id;
+select now() as time, 'OID_CHANGES FOR AC_TXN ALT_ACCOUNT_ID ENDS' as msg;
+--##
+select now() as time, 'OID_CHANGES FOR AC_TXN VOUCHER_ID, voucher_type_oid, branch_oid STARTS' as msg;
+UPDATE ac_txn b SET voucher_oid = a.oid_id, voucher_type_oid = a.voucher_type_oid, branch_oid = a.branch_oid  FROM voucher a WHERE a.id = b.voucher_id;
+select now() as time, 'OID_CHANGES FOR AC_TXN VOUCHER_ID, voucher_type_oid, branch_oid ENDS' as msg;
+--##
+select now() as time, 'OID_CHANGES FOR AC_TXN BRANCH_ID STARTS' as msg;
+create index on ac_txn (branch_id, branch_oid);
+UPDATE ac_txn b SET branch_oid = a.oid_id FROM branch a WHERE a.id = b.branch_id and branch_oid is null;
+select now() as time, 'OID_CHANGES FOR AC_TXN BRANCH_ID ENDS' as msg;
+--## AC_TXN
+---------------------------------------------------------------------------
+
+---------------------------------------------------------------------------
+--## INV_TXN
+select now() as time, 'OID_CHANGES FOR INV_TXN STARTS' as msg;
+-- inv_txn field related changes
+alter table inv_txn drop column if exists section_id;
+alter table inv_txn drop column if exists category_id;
+alter table inv_txn drop column if exists sub_category_id;
+alter table inv_txn drop column if exists manufacturer_id;
+--
+alter table inv_txn
+    add if not exists sno                      int,
+    add if not exists qty                      float,
+    add if not exists unit_id                  text,
+    add if not exists unit_conv                float,
+    add if not exists rate                     float,
+    add if not exists batch_no                 text,
+    add if not exists metadata                 jsonb,
+    add if not exists rate_tax_inclusive       bool,
+    add if not exists gst_tax                  text,
+    add if not exists mrp                      float,
+    add if not exists p_rate                   float,
+    add if not exists s_rate                   float,
+    add if not exists barcode                  text,
+    add if not exists expiry                   date,
+    add if not exists nlc                      float,
+    add if not exists cost                     float,
+    add if not exists landing_cost             float,
+    add if not exists disc_mode1               text,
+    add if not exists discount1                float,
+    add if not exists disc_mode2               text,
+    add if not exists discount2                float,
+    add if not exists disc_mode3               text,
+    add if not exists discount3                float,
+    add if not exists hsn_code                 text,
+    add if not exists cess_on_qty              float,
+    add if not exists cess_on_val              float,
+    add if not exists customer_id              text,
+    add if not exists sales_person_id          text,
+    add if not exists inventory_oid           text,
+    add if not exists branch_oid              text,
+    add if not exists voucher_oid             text,
+    add if not exists voucher_type_oid        text,
+    add if not exists warehouse_oid           text,
+    add if not exists section_id               text,
+    add if not exists category_id    text,
+    add if not exists sub_category_id text,
+    add if not exists manufacturer_id          text,
+    add if not exists free_qty                 float,
+    add if not exists vendor_oid              text,
+    add if not exists division_oid            text;
+--     add if not exists udf_reminder_date        date,
+--     add if not exists udf_drug_classifications text[];
+--##
+--select now() as time, 'inv_txn set udf_reminder_date from sale_bill STARTS' as msg;
+--update inv_txn t
+--set udf_reminder_date = i.date + i.reminder_days
+--from sale_bill i
+--    where i.voucher_id = t.voucher_id
+--    and i.reminder_days is not null;
+--select now() as time, 'inv_txn set udf_reminder_date from sale_bill ENDS' as msg;
+--##
+select now() as time, 'inv_txn set data from credit_note_inv_item STARTS' as msg;
+update inv_txn t
+set sno                         = i.sno,
+    qty                         = i.qty,
+    rate                        = i.rate,
+    unit_id                     = uc.conversion_unit_id,
+    unit_conv                   = case when i.is_retail_qty then 1 else b.inv_retail_qty end,
+    rate_tax_inclusive          = true,
+    gst_tax                     = i.gst_tax,
+    disc_mode1                  = i.disc_mode,
+    discount1                   = i.discount,
+    hsn_code                    = i.hsn_code,
+    cess_on_qty                 = i.cess_on_qty,
+    cess_on_val                 = i.cess_on_val,
+    batch_no                    = b.batch_no,
+    vendor_oid                 = b.vendor_oid,
+    inventory_oid              = b.inventory_oid,
+    section_id                  = b.section_id,
+    category_id       = b.category_id,
+    sub_category_id   = b.sub_category_id,
+    manufacturer_id             = b.manufacturer_id
+from credit_note_inv_item i
+         left join batch b on b.id = i.batch_id
+         left join unit_conversion uc on uc.conversion = case when i.is_retail_qty then 1 else b.inv_retail_qty end
+where t.id = i.id;
+select now() as time, 'inv_txn set data from credit_note_inv_item END' as msg;
+--##
+select now() as time, 'inv_txn set customer from credit_note STARTS' as msg;
+UPDATE inv_txn t
+SET customer_id = a.oid_id
+FROM credit_note b
+LEFT JOIN account a ON a.id = b.customer_id
+    WHERE t.voucher_id = b.voucher_id
+  AND b.customer_id IS NOT NULL;
+--##
+select now() as time, 'inv_txn set customer from credit_note end' as msg;
+--##
+select now() as time, 'inv_txn set data from debit_note_inv_item start' as msg;
+update inv_txn t
+set sno                         = i.sno,
+    qty                         = i.qty,
+    rate                        = i.rate,
+    unit_id                     = uc.conversion_unit_id,
+    unit_conv                   = case when i.is_retail_qty then 1 else b.inv_retail_qty end,
+    gst_tax                     = i.gst_tax,
+    disc_mode1                  = i.disc1_mode,
+    discount1                   = i.discount1,
+    disc_mode2                  = i.disc2_mode,
+    discount2                   = i.discount2,
+    rate_tax_inclusive          = false,
+    hsn_code                    = i.hsn_code,
+    cess_on_qty                 = i.cess_on_qty,
+    cess_on_val                 = i.cess_on_val,
+    batch_no                    = b.batch_no,
+    inventory_oid              = b.inventory_oid,
+    vendor_oid                 = b.vendor_oid,
+    section_id                  = b.section_id,
+    category_id       = b.category_id,
+    sub_category_id   = b.sub_category_id,
+    manufacturer_id             = b.manufacturer_id
+from debit_note_inv_item i
+         left join batch b on b.id = i.batch_id
+         left join unit_conversion uc on uc.conversion = case when i.is_retail_qty then 1 else b.inv_retail_qty end
+where t.id = i.id;
+select now() as time, 'inv_txn set data from debit_note_inv_item end' as msg;
+--##
+select now() as time, 'inv_txn set data from personal_use_purchase_inv_item start' as msg;
+update inv_txn t
+set sno                         = i.sno,
+    qty                         = i.qty,
+    rate                        = i.cost,
+    unit_id                     = uc.conversion_unit_id,
+    unit_conv                   = case when i.is_retail_qty then 1 else b.inv_retail_qty end,
+    gst_tax                     = i.gst_tax,
+    hsn_code                    = i.hsn_code,
+    cess_on_qty                 = i.cess_on_qty,
+    cess_on_val                 = i.cess_on_val,
+    batch_no                    = b.batch_no,
+    vendor_oid                 = b.vendor_oid,
+    inventory_oid              = b.inventory_oid,
+    section_id                  = b.section_id,
+    category_id       = b.category_id,
+    sub_category_id   = b.sub_category_id,
+    manufacturer_id             = b.manufacturer_id
+from personal_use_purchase_inv_item i
+         left join batch b on b.id = i.batch_id
+         left join unit_conversion uc on uc.conversion = case when i.is_retail_qty then 1 else b.inv_retail_qty end
+where t.id = i.id;
+select now() as time, 'inv_txn set data from personal_use_purchase_inv_item end' as msg;
+--##
+select now() as time, 'inv_txn set data from purchase_bill_inv_item start' as msg;
+update inv_txn t
+set sno                         = i.sno,
+    qty                         = i.qty,
+    rate                        = i.rate,
+    p_rate                      = i.rate,
+    unit_id                     = uc.conversion_unit_id,
+    unit_conv                   = case when i.is_retail_qty then 1 else b.inv_retail_qty end,
+    gst_tax                     = i.gst_tax,
+    disc_mode1                  = i.disc1_mode,
+    discount1                   = i.discount1,
+    disc_mode2                  = i.disc2_mode,
+    discount2                   = i.discount2,
+    hsn_code                    = i.hsn_code,
+    cess_on_qty                 = i.cess_on_qty,
+    cess_on_val                 = i.cess_on_val,
+    inventory_oid              = b.inventory_oid,
+    section_id                  = b.section_id,
+    category_id       = b.category_id,
+    sub_category_id   = b.sub_category_id,
+    manufacturer_id             = b.manufacturer_id,
+    free_qty                    = i.free_qty,
+    batch_no                    = b.batch_no,
+    vendor_oid                 = b.vendor_oid,
+    s_rate                      = b.s_rate,
+    mrp                         = b.mrp,
+    expiry                      = b.expiry,
+    nlc                         = b.nlc,
+    landing_cost                = b.landing_cost,
+    cost                        = b.cost
+from purchase_bill_inv_item i
+    left join batch b on b.txn_id = i.id
+    left join unit_conversion uc on uc.conversion = case when i.is_retail_qty then 1 else b.inv_retail_qty end
+where t.id = i.id;
+--##
+select now() as time, 'inv_txn set data from purchase_bill_inv_item end' as msg;
+--##
+select now() as time, 'inv_txn set data from sale_bill_inv_item start' as msg;
+update inv_txn t
+set sno                         = i.sno,
+    qty                         = i.qty,
+    rate                        = i.rate,
+    unit_id                     = uc.conversion_unit_id,
+    unit_conv                   = case when i.is_retail_qty then 1 else b.inv_retail_qty end,
+    gst_tax                     = i.gst_tax,
+    disc_mode1                  = i.disc_mode,
+    discount1                   = i.discount,
+    hsn_code                    = i.hsn_code,
+    cess_on_qty                 = i.cess_on_qty,
+    cess_on_val                 = i.cess_on_val,
+    sales_person_id             = sp.oid_id,
+    batch_no                    = b.batch_no,
+    vendor_oid                 = b.vendor_oid,
+    inventory_oid              = b.inventory_oid,
+    section_id                  = b.section_id,
+    category_id       = b.category_id,
+    sub_category_id   = b.sub_category_id,
+    manufacturer_id             = b.manufacturer_id
+from sale_bill_inv_item i
+    left join batch b on b.id = i.batch_id
+    left join unit_conversion uc on uc.conversion = case when i.is_retail_qty then 1 else b.inv_retail_qty end
+    left join sales_person sp on sp.id = i.s_inc_id
+where t.id = i.id;
+--##
+/*
+select now() as time, 'inv_txn set drug_classifications from sale_bill_inv_item start' as msg;
+WITH a AS (
+    SELECT drug_classifications, id
+    FROM sale_bill_inv_item
+    WHERE date > '2026-02-01'
+      AND array_length(drug_classifications, 1) > 0
+)
+UPDATE inv_txn t
+SET udf_drug_classifications = (
+        SELECT array_agg(d.oid_id)
+        FROM udm_drug_classification d
+        WHERE d.id = ANY(a.drug_classifications)
+    )
+FROM a
+WHERE t.id = a.id;
+select now() as time, 'inv_txn set drug_classifications from sale_bill_inv_item end' as msg;
+*/
+--##
+select now() as time, 'inv_txn set data from sale_bill_inv_item end' as msg;
+--##
+select now() as time, 'inv_txn set customer from sale_bill start' as msg;
+update inv_txn t
+set customer_id   = cid.oid_id
+from sale_bill b
+    left join account cid on cid.id = b.customer_id
+where b.customer_id is not null
+  and t.voucher_id = b.voucher_id;
+--##
+select now() as time, 'inv_txn set customer from sale_bill end' as msg;
+--##
+select now() as time, 'inv_txn set data from stock_journal_inv_item start' as msg;
+update inv_txn t
+set sno                         = i.sno,
+    qty                         = i.qty,
+    rate                        = i.rate,
+    unit_id                     = uc.conversion_unit_id,
+    unit_conv                   = case when i.is_retail_qty then 1 else b.inv_retail_qty end,
+    barcode                     = i.barcode,
+    asset_amount                = i.asset_amount,
+    batch_no                    = b.batch_no,
+    vendor_oid                 = b.vendor_oid,
+    s_rate                      = b.s_rate,
+    mrp                         = b.mrp,
+    expiry                      = b.expiry,
+    nlc                         = b.nlc,
+    landing_cost                = b.landing_cost,
+    cost                        = b.cost,
+    section_id                  = b.section_id,
+    category_id       = b.category_id,
+    sub_category_id   = b.sub_category_id,
+    inventory_oid              = b.inventory_oid,
+    manufacturer_id             = b.manufacturer_id
+from stock_journal_inv_item i
+         left join batch b on b.id = i.batch_id or b.txn_id = i.id
+         left join unit_conversion uc on uc.conversion = case when i.is_retail_qty then 1 else b.inv_retail_qty end
+where t.id = i.id;
+--##
+select now() as time, 'inv_txn set data from stock_journal_inv_item end' as msg;
+--##
+select now() as time, 'inv_txn set data from inv_opening start' as msg;
+update inv_txn t
+set sno                         = i.sno,
+    unit_id                     = uc.conversion_unit_id,
+    unit_conv                   = case when i.is_retail_qty then 1 else b.inv_retail_qty end,
+    qty                         = i.qty,
+    rate                        = i.rate,
+    asset_amount                = i.asset_amount,
+    batch_no                    = b.batch_no,
+    vendor_oid                 = b.vendor_oid,
+    s_rate                      = b.s_rate,
+    mrp                         = b.mrp,
+    expiry                      = b.expiry,
+    nlc                         = b.nlc,
+    landing_cost                = b.landing_cost,
+    cost                        = b.cost,
+    inventory_oid              = b.inventory_oid,
+    section_id                  = b.section_id,
+    category_id       = b.category_id,
+    sub_category_id   = b.sub_category_id,
+    manufacturer_id             = b.manufacturer_id
+from inventory_opening i
+         left join batch b on b.txn_id = i.id
+         left join unit_conversion uc on uc.conversion = case when i.is_retail_qty then 1 else b.inv_retail_qty end
+where t.id = i.id;
+select now() as time, 'inv_txn set data from inv_opening end' as msg;
+--##
+alter table inv_txn
+    alter column sno set not null,
+    alter column qty set not null,
+    alter column unit_id set not null,
+    alter column unit_conv set not null,
+    alter column rate set not null,
+    alter column inward set not null,
+    alter column outward set not null;
+------------------
+select now() as time, 'OID_CHANGES FOR INV_TXN BRANCH_ID STARTS' as msg;
+create index on inv_txn (branch_id);
+UPDATE inv_txn b SET branch_oid = a.oid_id FROM branch a WHERE a.id = b.branch_id;
+select now() as time, 'OID_CHANGES FOR INV_TXN BRANCH_ID ENDS' as msg;
+------------------
+select now() as time, 'OID_CHANGES FOR INV_TXN VOUCHER_ID, voucher_type_oid STARTS' as msg;
+create index on inv_txn (voucher_id);
+UPDATE inv_txn b SET voucher_oid = a.oid_id, voucher_type_oid = a.voucher_type_oid FROM voucher a WHERE a.id = b.voucher_id;
+select now() as time, 'OID_CHANGES FOR INV_TXN VOUCHER_ID, voucher_type_oid ENDS' as msg;
+------------------
+select now() as time, 'OID_CHANGES FOR INV_TXN WAREHOUSE_ID STARTS' as msg;
+create index on inv_txn (warehouse_id);
+UPDATE inv_txn b SET warehouse_oid = a.oid_id FROM warehouse a WHERE a.id = b.warehouse_id;
+select now() as time, 'OID_CHANGES FOR INV_TXN WAREHOUSE_ID ENDS' as msg;
+------------------
+select now() as time, 'OID_CHANGES FOR INV_TXN DIVISION_ID STARTS' as msg;
+create index on inv_txn (division_id);
+UPDATE inv_txn b SET division_oid = a.oid_id FROM division a WHERE a.id = b.division_id;
+select now() as time, 'OID_CHANGES FOR INV_TXN DIVISION_ID ENDS' as msg;
+------------------
+alter table inv_txn alter column batch_no set not null;
+--## INV_TXN
+---------------------------------------------------------------------------
+
+---------------------------------------------------------------------------
+--## BILL_ALLOCATION
+alter table bill_allocation
+    add if not exists new_ref_no text;
+--##
+create index bill_allocation_pending
+    on bill_allocation (pending);
+--##
+with a as (select coalesce(nullif(upper(regexp_replace(ref_no, '\s+', '', 'g')), ''), voucher_no, '1') as no,
+                  array_agg(pending)                                                                   as pids
+           from bill_allocation
+           where ref_type = 'NEW'
+           group by account_id, branch_id,
+                    coalesce(nullif(upper(regexp_replace(ref_no, '\s+', '', 'g')), ''), voucher_no, '1'))
+update bill_allocation b
+set new_ref_no = a.no
+from a
+where b.pending = any (a.pids);
+--##
+alter table bill_allocation
+    rename ref_no to old_ref_no;
+--##
+alter table bill_allocation
+    rename new_ref_no to ref_no;
+--##
+select now() as time, 'OID_CHANGES FOR BILL_ALLOCATION STARTS' as msg;
+-- bill_allocation field related changes
+alter table bill_allocation rename meta_data to metadata;
+alter table bill_allocation alter column metadata type jsonb using metadata::jsonb;
+alter table bill_allocation alter column sno type int using sno::int;
+-- bill_allocation text related changes
+ALTER TABLE bill_allocation ADD COLUMN IF NOT EXISTS account_oid text;
+ALTER TABLE bill_allocation ADD COLUMN IF NOT EXISTS account_type_oid text;
+ALTER TABLE bill_allocation ADD COLUMN IF NOT EXISTS branch_oid text;
+ALTER TABLE bill_allocation ADD COLUMN IF NOT EXISTS voucher_oid text;
+ALTER TABLE bill_allocation ADD COLUMN IF NOT EXISTS ac_txn_oid text;
+------------------
+    UPDATE bill_allocation b SET account_oid = a.oid_id, account_type_oid = a.account_type_oid FROM account a WHERE a.id = b.account_id;
+    UPDATE bill_allocation b SET branch_oid = a.oid_id FROM branch a WHERE a.id = b.branch_id;
+    UPDATE bill_allocation b SET voucher_oid = a.oid_id FROM voucher a WHERE a.id = b.voucher_id;
+    UPDATE bill_allocation b SET ac_txn_oid = a.oid_id FROM ac_txn a WHERE a.id = b.ac_txn_id;
+select now() as time, 'OID_CHANGES FOR BILL_ALLOCATION STARTS' as msg;
+--## BILL_ALLOCATION
+---------------------------------------------------------------------------
+
 -------------------------------------------------------------------------------------------------
 ---- DROP UNWANTED COLUMN, EXPRESSION, DEFAULT
 -------------------------------------------------------------------------------------------------
 select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
+-- AC_TXN --
+    alter table ac_txn alter column amount drop expression;
+    alter table ac_txn drop column if exists is_opening;
+    alter table ac_txn drop column if exists voucher_prefix;
+    alter table ac_txn drop column if exists voucher_fy;
+    alter table ac_txn drop column if exists voucher_seq;
+    alter table ac_txn drop column if exists eft_reconciliation_voucher_id;
+    alter table ac_txn drop column if exists account_type_name;
+    alter table ac_txn drop column if exists alt_account_name;
+    alter table ac_txn drop column if exists inst_no;
+    alter table ac_txn drop column if exists base_account_types;
+-- INV_TXN --
+    alter table inv_txn drop column if exists party_id;
+    alter table inv_txn drop column if exists party_name;
+    alter table inv_txn drop column if exists vendor_name;
+    alter table inv_txn drop column if exists reorder_inventory_id;
+    alter table inv_txn drop column if exists inventory_hsn;
+    alter table inv_txn drop column if exists division_name;
+    alter table inv_txn drop column if exists manufacturer_name;
+    alter table inv_txn drop column if exists is_opening;
+    alter table inv_txn drop column if exists inventory_voucher_id;
+    alter table inv_txn drop column if exists category1_id;
+    alter table inv_txn drop column if exists category1_name;
+    alter table inv_txn drop column if exists category2_id;
+    alter table inv_txn drop column if exists category2_name;
+    alter table inv_txn drop column if exists category3_id;
+    alter table inv_txn drop column if exists category3_name;
+    alter table inv_txn drop column if exists doctor_id;
+    alter table inv_txn drop column if exists doctor_name;
+    alter table inv_txn drop column if exists sale_taxable_amount;
+    alter table inv_txn drop column if exists sale_tax_amount;
+    alter table inv_txn drop column if exists pos_id;
+    alter table inv_txn drop if exists batch_id; -- check_again
+--     alter table inv_txn alter column batch_id drop not null;
+    alter table inv_txn drop if exists dummy;
+-- VOUCHER --
+    alter table voucher drop column if exists branch_gst;
+    alter table voucher drop column if exists party_gst;
+    alter table voucher drop column if exists party_id;
+    alter table voucher drop column if exists pos_counter_code;
+    alter table voucher drop column if exists approval_state;
+    alter table voucher drop column if exists require_no_of_approval;
+    alter table voucher drop column if exists pos_counter_session_id;
+    alter table voucher drop column if exists session;
+    alter table voucher drop column if exists pos_counter_settlement_id;
 -- ACCOUNT_DAILY_SUMMARY --
     alter table account_daily_summary alter column amount drop expression;
 -- ACCOUNT --
@@ -1183,7 +1983,20 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table account drop column if exists service_charge_non_gst_account_id;
     alter table account drop column if exists itc_ineligible;
     alter table account drop column if exists secondary_emails;
+-- BANK_TXN --
+    alter table bank_txn alter column credit drop expression;
+    alter table bank_txn alter column debit drop expression;
+    alter table bank_txn drop column if exists in_favour_of;
+    alter table bank_txn drop column if exists base_account_types;
+    alter table bank_txn drop column if exists alt_account_name;
+    alter table bank_txn drop column if exists bank_beneficiary_id;
+    alter table bank_txn drop column if exists epayment_tran_ref;
+    alter table bank_txn drop column if exists epayment_req_ref;
+    alter table bank_txn drop column if exists epayment_status;
+    alter table bank_txn drop column if exists bank_ref_no;
+    alter table bank_txn drop column if exists bank_particulars;
 -- BATCH --
+--     alter table batch alter column p_rate drop expression;
     alter table batch alter column closing drop expression;
     alter table batch drop column if exists sno;
     alter table batch drop column if exists reorder_inventory_id;
@@ -1191,6 +2004,7 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table batch drop column if exists branch_name;
     alter table batch drop column if exists division_name;
     alter table batch drop column if exists warehouse_name;
+    alter table batch drop column if exists txn_id;
     alter table batch drop column if exists inventory_voucher_id;
     alter table batch drop column if exists opening_p_rate;
     alter table batch drop column if exists label_qty;
@@ -1206,6 +2020,14 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table batch drop column if exists category2_name;
     alter table batch drop column if exists category3_id;
     alter table batch drop column if exists category3_name;
+    alter table batch drop column if exists inv_retail_qty;
+-- BILL_ALLOCATION --
+    alter table bill_allocation drop column if exists base_account_types;
+    -- alter table bill_allocation drop column if exists pending; -- check_again
+    alter table bill_allocation drop column if exists old_ref_no;
+    alter table bill_allocation drop column if exists is_approved;
+    alter table bill_allocation drop column if exists account_type_name;
+    alter table bill_allocation drop column if exists bill_date;
 -- INVENTORY --
     alter table inventory alter column val_name drop expression;
     alter table inventory drop column if exists cess;
@@ -1293,8 +2115,8 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     alter table voucher_type            drop if exists changed_at;
     alter table warehouse               drop if exists changed_at;
     alter table udm_pos_counter         drop if exists changed_at;
-    alter table udm_doctor                  drop if exists changed_at;
-    alter table udm_drug_classification     drop if exists changed_at;
+--     alter table udm_doctor                  drop if exists changed_at;
+--     alter table udm_drug_classification     drop if exists changed_at;
 --DROP OR MODIFY TABLE--
     drop table if exists acc_cat_txn;
     drop table if exists account_opening;
@@ -1306,10 +2128,19 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     drop table if exists bill_of_material_component;
     drop table if exists category;
     drop table if exists category_option;
+    drop table if exists credit_note;
+    drop table if exists credit_note_inv_item;
     drop table if exists customer_advance;
+    drop table if exists debit_note;
+    drop table if exists debit_note_inv_item;
+    drop table if exists purchase_bill;
+    drop table if exists purchase_bill_inv_item;
     drop table if exists sale_bill_reminder_inv_item;
     drop table if exists sale_bill_reminder;
+    drop table if exists sale_bill;
+    drop table if exists sale_bill_inv_item;
     drop table if exists sale_package;
+    drop table if exists sale_quotation;
     drop table if exists delete_log;
     drop table if exists delivery_note;
     drop table if exists delivery_note_inv_item;
@@ -1323,18 +2154,25 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
     drop table if exists gate_entry;
     drop table if exists gift_coupon;
     drop table if exists gift_voucher;
+    drop table if exists goods_inward_note;
+    drop table if exists gst_txn;
     drop table if exists incentive_range;
+    drop table if exists inventory_opening;
     drop table if exists material_conversion;
     drop table if exists material_conversion_inv_item;
     drop table if exists member_role;
     drop table if exists offer_management;
     drop table if exists organization_old;
+    drop table if exists personal_use_purchase_inv_item;
+    drop table if exists personal_use_purchase;
     drop table if exists pos_offline_voucher;
     drop table if exists pos_server;
     drop table if exists power_bi;
     drop table if exists price_list_condition;
     drop table if exists price_list;
     drop table if exists shipment;
+    drop table if exists stock_journal;
+    drop table if exists stock_journal_inv_item;
     drop table if exists stock_value;
     drop table if exists stock_value_opening;
     drop table if exists sales_emi_reconciliation_voucher;
@@ -1348,22 +2186,37 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE END' as msg;
 -------------------------------------------------------------------------------------------------
 select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
 -- ACCOUNT
-    alter table account add column if not exists old_id int;
-    update account set old_id = id;
-    create index on account (old_id);
     alter table account drop column if exists id;
     alter table account rename column oid_id to id;
     alter table account alter column id set not null;
     ALTER TABLE account ADD CONSTRAINT account_pkey PRIMARY KEY (id);
         --
+        alter table ac_txn drop column if exists account_id;
+        alter table ac_txn rename column account_oid to account_id;
+        alter table ac_txn alter column account_id set not null;
+        --
+        alter table ac_txn drop column if exists alt_account_id;
+        alter table ac_txn rename column alt_account_oid to alt_account_id;
+        --
         alter table account_daily_summary drop column if exists account_id;
         alter table account_daily_summary rename column account_oid to account_id;
         alter table account_daily_summary alter column account_id set not null;
+        --
+        alter table bank_txn drop column if exists account_id;
+        alter table bank_txn rename column account_oid to account_id;
+        alter table bank_txn alter column account_id set not null;
+        --
+        alter table bank_txn drop column if exists alt_account_id;
+        alter table bank_txn rename column alt_account_oid to alt_account_id;
         --
         alter table branch drop column if exists account_id;
         alter table branch rename column account_oid to account_id;
         alter table branch alter column account_id set not null;
         alter table branch add unique (account_id);
+        --
+        alter table bill_allocation drop column if exists account_id;
+        alter table bill_allocation rename column account_oid to account_id;
+        alter table bill_allocation alter column account_id set not null;
         --
         alter table batch drop column if exists vendor_id;
         alter table batch rename column vendor_oid to vendor_id;
@@ -1388,22 +2241,25 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         alter table tds_on_voucher rename column tds_account_oid to tds_account_id;
         alter table tds_on_voucher alter column tds_account_id set not null;
         --
+        alter table inv_txn drop column if exists vendor_id;
+        alter table inv_txn rename column vendor_oid to vendor_id;
+        --
         alter table inventory_branch_detail drop column if exists preferred_vendor_id;
         alter table inventory_branch_detail rename column preferred_vendor_oid to preferred_vendor_id;
         --
         alter table inventory_branch_detail drop column if exists last_vendor_id;
         alter table inventory_branch_detail rename column last_vendor_oid to last_vendor_id;
         --
-        alter table udm_vendor_bill_map drop column if exists vendor_id;
-        alter table udm_vendor_bill_map rename column vendor_oid to vendor_id;
-        alter table udm_vendor_bill_map alter column vendor_id set not null;
-        alter table udm_vendor_bill_map add constraint udm_vendor_bill_map_pkey PRIMARY KEY (vendor_id);
+        -- alter table udm_vendor_bill_map drop column if exists vendor_id;
+        -- alter table udm_vendor_bill_map rename column vendor_oid to vendor_id;
+        -- alter table udm_vendor_bill_map alter column vendor_id set not null;
+        -- alter table udm_vendor_bill_map add constraint udm_vendor_bill_map_pkey PRIMARY KEY (vendor_id);
         --
-        alter table udm_vendor_item_map drop column if exists vendor_id;
-        alter table udm_vendor_item_map rename column vendor_oid to vendor_id;
-        alter table udm_vendor_item_map alter column vendor_id set not null;
-        alter table udm_vendor_item_map alter column unit_id set not null;
-        alter table udm_vendor_item_map add constraint udm_vendor_item_map_pkey PRIMARY KEY (vendor_id, vendor_inventory);
+        -- alter table udm_vendor_item_map drop column if exists vendor_id;
+        -- alter table udm_vendor_item_map rename column vendor_oid to vendor_id;
+        -- alter table udm_vendor_item_map alter column vendor_id set not null;
+        -- alter table udm_vendor_item_map alter column unit_id set not null;
+        -- alter table udm_vendor_item_map add constraint udm_vendor_item_map_pkey PRIMARY KEY (vendor_id, vendor_inventory);
 -- ACCOUNT_TYPE
     alter table account_type drop column if exists id;
     alter table account_type rename column oid_id to id;
@@ -1412,24 +2268,57 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
     alter table account_type drop column if exists parent_id;
     alter table account_type rename column parent_oid to parent_id;
         --
+        alter table ac_txn drop column if exists account_type_id;
+        alter table ac_txn rename column account_type_oid to account_type_id;
+        alter table ac_txn alter column account_type_id set not null;
+        --
         alter table account drop column if exists account_type_id;
         alter table account rename column account_type_oid to account_type_id;
         alter table account alter column account_type_id set not null;
+        --
+        alter table bill_allocation drop column if exists account_type_id;
+        alter table bill_allocation rename column account_type_oid to account_type_id;
+        alter table bill_allocation alter column account_type_id set not null;
         --
         alter table account drop column if exists bank_id;
         alter table account add column if not exists bank_id text;
         --
         alter table account drop column if exists bank_beneficiary_id;
         alter table account add column if not exists bank_beneficiary_id text;
+-- AC_TXN
+    alter table ac_txn drop column if exists id;
+    alter table ac_txn rename column oid_id to id;
+    alter table ac_txn alter column id set not null;
+    ALTER TABLE ac_txn ADD CONSTRAINT ac_txn_pkey PRIMARY KEY (id);
+        --
+        alter table bank_txn drop column if exists ac_txn_id;
+        alter table bank_txn rename column ac_txn_oid to ac_txn_id;
+        alter table bank_txn alter column ac_txn_id set not null;
+        --
+        alter table bill_allocation drop column if exists ac_txn_id;
+        alter table bill_allocation rename column ac_txn_oid to ac_txn_id;
+        alter table bill_allocation alter column ac_txn_id set not null;
+-- INV_TXN
+    alter table inv_txn drop column if exists id;
+    alter table inv_txn rename column oid_id to id;
+    alter table inv_txn alter column id set not null;
+    ALTER TABLE inv_txn ADD CONSTRAINT inv_txn_pkey PRIMARY KEY (id);
+-- BANK_TXN
+    alter table bank_txn drop column if exists id;
+    alter table bank_txn rename column oid_id to id;
+    alter table bank_txn alter column id set not null;
+    ALTER TABLE bank_txn ADD CONSTRAINT bank_txn_pkey PRIMARY KEY (id);
+-- BILL_ALLOCATION
+    alter table bill_allocation drop column if exists id;
+    alter table bill_allocation rename column oid_id to id;
+    alter table bill_allocation alter column id set not null;
+    ALTER TABLE bill_allocation ADD CONSTRAINT bill_allocation_pkey PRIMARY KEY (id);
 -- TDS_ON_VOUCHER
     alter table tds_on_voucher drop column if exists id;
     alter table tds_on_voucher rename column oid_id to id;
     alter table tds_on_voucher alter column id set not null;
     ALTER TABLE tds_on_voucher ADD CONSTRAINT tds_on_voucher_pkey PRIMARY KEY (id);
 -- BRANCH
-    alter table branch add column if not exists old_id int;
-    update branch set old_id = id;
-    create index on branch (old_id);
     alter table branch drop column if exists id;
     alter table branch rename column oid_id to id;
     alter table branch alter column id set not null;
@@ -1437,14 +2326,30 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
     alter table branch alter column misc type jsonb using misc::jsonb;
     alter table branch alter column configuration type jsonb using configuration::jsonb;
         --
+        alter table ac_txn drop column if exists branch_id;
+        alter table ac_txn rename column branch_oid to branch_id;
+        alter table ac_txn alter column branch_id set not null;
+        --
         alter table account_daily_summary drop column if exists branch_id;
         alter table account_daily_summary rename column branch_oid to branch_id;
         alter table account_daily_summary alter column branch_id set not null;
         ALTER TABLE account_daily_summary ADD CONSTRAINT account_daily_summary_pkey PRIMARY KEY (account_id, branch_id, date);
         --
+        alter table bank_txn drop column if exists branch_id;
+        alter table bank_txn rename column branch_oid to branch_id;
+        alter table bank_txn alter column branch_id set not null;
+        --
         alter table batch drop column if exists branch_id;
         alter table batch rename column branch_oid to branch_id;
         alter table batch alter column branch_id set not null;
+        --
+        alter table bill_allocation drop column if exists branch_id;
+        alter table bill_allocation rename column branch_oid to branch_id;
+        alter table bill_allocation alter column branch_id set not null;
+        --
+        alter table inv_txn drop column if exists branch_id;
+        alter table inv_txn rename column branch_oid to branch_id;
+        alter table inv_txn alter column branch_id set not null;
         --
         alter table inventory_branch_detail drop column if exists branch_id;
         alter table inventory_branch_detail rename column branch_oid to branch_id;
@@ -1457,17 +2362,18 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         alter table voucher_numbering drop column if exists branch_id;
         alter table voucher_numbering rename column branch_oid to branch_id;
         --
+        alter table voucher drop column if exists branch_id;
+        alter table voucher rename column branch_oid to branch_id;
+        alter table voucher alter column branch_id set not null;
+        --
         alter table udm_pos_counter drop column if exists branch_id;
         alter table udm_pos_counter rename column branch_oid to branch_id;
         alter table udm_pos_counter alter column branch_id set not null;
         --
-        alter table udm_wanted_item drop column if exists branch_id;
-        alter table udm_wanted_item rename column branch_oid to branch_id;
-        alter table udm_wanted_item alter column branch_id set not null;
+        -- alter table udm_wanted_item drop column if exists branch_id;
+        -- alter table udm_wanted_item rename column branch_oid to branch_id;
+        -- alter table udm_wanted_item alter column branch_id set not null;
 -- DIVISION
-    alter table division add column if not exists old_id int;
-    update division set old_id = id;
-    create index on division (old_id);
     alter table division drop column if exists id;
     alter table division rename column oid_id to id;
     alter table division alter column id set not null;
@@ -1476,6 +2382,10 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         alter table batch drop column if exists division_id;
         alter table batch rename column division_oid to division_id;
         alter table batch alter column division_id set not null;
+        --
+        alter table inv_txn drop column if exists division_id;
+        alter table inv_txn rename column division_oid to division_id;
+        alter table inv_txn alter column division_id set not null;
         --
         alter table inventory drop column if exists division_id;
         alter table inventory rename column division_oid to division_id;
@@ -1498,26 +2408,28 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         alter table batch rename column inventory_oid to inventory_id;
         alter table batch alter column inventory_id set not null;
         --
+        --
+        alter table inv_txn drop column if exists inventory_id;
+        alter table inv_txn rename column inventory_oid to inventory_id;
+        alter table inv_txn alter column inventory_id set not null;
+        --
         alter table inventory_branch_detail drop column if exists inventory_id;
         alter table inventory_branch_detail rename column inventory_oid to inventory_id;
         alter table inventory_branch_detail alter column inventory_id set not null;
         alter table inventory_branch_detail add constraint inventory_branch_detail_pkey primary key (branch_id, inventory_id);
         --
-        alter table udm_vendor_item_map drop column if exists inventory_id;
-        alter table udm_vendor_item_map rename column inventory_oid to inventory_id;
-        alter table udm_vendor_item_map alter column inventory_id set not null;
+        -- alter table udm_vendor_item_map drop column if exists inventory_id;
+        -- alter table udm_vendor_item_map rename column inventory_oid to inventory_id;
+        -- alter table udm_vendor_item_map alter column inventory_id set not null;
         --
-        alter table udm_wanted_item drop column if exists inventory_id;
-        alter table udm_wanted_item rename column inventory_oid to inventory_id;
+        -- alter table udm_wanted_item drop column if exists inventory_id;
+        -- alter table udm_wanted_item rename column inventory_oid to inventory_id;
 -- MANUFACTURER
     alter table manufacturer drop column if exists id;
     alter table manufacturer rename column oid_id to id;
     alter table manufacturer alter column id set not null;
     ALTER TABLE manufacturer ADD CONSTRAINT manufacturer_pkey PRIMARY KEY (id);
 -- SALES_PERSON
-    alter table sales_person add column if not exists old_id int;
-    update sales_person set old_id = id;
-    create index on sales_person (old_id);
     alter table sales_person drop column if exists id;
     alter table sales_person rename column oid_id to id;
     alter table sales_person alter column id set not null;
@@ -1542,6 +2454,8 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         --
         alter table batch alter column unit_id set not null;
         --
+        alter table inv_txn alter column unit_id set not null;
+        --
         alter table inventory drop column if exists unit_id;
         alter table inventory rename column unit_oid to unit_id;
         alter table inventory alter column unit_id set not null;
@@ -1552,16 +2466,31 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         alter table inventory drop column if exists purchase_unit_id;
         alter table inventory rename column purchase_unit_oid to purchase_unit_id;
 -- VOUCHER
+    alter table voucher drop column if exists id;
+    alter table voucher rename column oid_id to id;
+    alter table voucher alter column id set not null;
+    ALTER TABLE voucher ADD CONSTRAINT voucher_pkey PRIMARY KEY (id);
+        --
+        alter table ac_txn drop column if exists voucher_id;
+        alter table ac_txn rename column voucher_oid to voucher_id;
+        --
+        alter table bank_txn drop column if exists voucher_id;
+        alter table bank_txn rename column voucher_oid to voucher_id;
+        alter table bank_txn alter column voucher_id set not null;
+        --
         alter table batch drop column if exists voucher_id;
         alter table batch rename column voucher_oid to voucher_id;
+        --
+        alter table bill_allocation drop column if exists voucher_id;
+        alter table bill_allocation rename column voucher_oid to voucher_id;
+        --
+        alter table inv_txn drop column if exists voucher_id;
+        alter table inv_txn rename column voucher_oid to voucher_id;
         --
         alter table tds_on_voucher drop column if exists voucher_id;
         alter table tds_on_voucher rename column voucher_oid to voucher_id;
         alter table tds_on_voucher alter column voucher_id set not null;
 -- VOUCHER_TYPE
-    alter table voucher_type add column if not exists old_id int;
-    update voucher_type set old_id = id;
-    create index on voucher_type (old_id);
     alter table voucher_type drop column if exists id;
     alter table voucher_type rename column oid_id to id;
     alter table voucher_type alter column id set not null;
@@ -1569,13 +2498,19 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
     alter table voucher_type drop column if exists sequence_id;
     alter table voucher_type rename column sequence_oid to sequence_id;
         --
+        alter table ac_txn drop column if exists voucher_type_id;
+        alter table ac_txn rename column voucher_type_oid to voucher_type_id;
+        --
+        alter table inv_txn drop column if exists voucher_type_id;
+        alter table inv_txn rename column voucher_type_oid to voucher_type_id;
+        --
         alter table voucher_numbering drop column if exists voucher_type_id;
         alter table voucher_numbering rename column voucher_type_oid to voucher_type_id;
-        --
+         --
+        alter table voucher drop column if exists voucher_type_id;
+        alter table voucher rename column voucher_type_oid to voucher_type_id;
+        alter table voucher alter column voucher_type_id set not null;
 -- WAREHOUSE
-    alter table warehouse add column if not exists old_id int;
-    update warehouse set old_id = id;
-    create index on warehouse (old_id);
     alter table warehouse drop column if exists id;
     alter table warehouse rename column oid_id to id;
     alter table warehouse alter column id set not null;
@@ -1584,6 +2519,11 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         alter table batch drop column if exists warehouse_id;
         alter table batch rename column warehouse_oid to warehouse_id;
         alter table batch alter column warehouse_id set not null;
+        alter table batch drop column if exists id; -- check_again
+        --
+        alter table inv_txn drop column if exists warehouse_id;
+        alter table inv_txn rename column warehouse_oid to warehouse_id;
+        alter table inv_txn alter column warehouse_id set not null;
 -- MEMBER
     alter table member drop column if exists id;
     alter table member rename column oid_id to id;
@@ -1602,10 +2542,6 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
         alter table voucher_numbering rename column f_year_oid to f_year_id;
         alter table voucher_numbering ADD CONSTRAINT voucher_numbering_pkey PRIMARY KEY (branch_id, f_year_id, voucher_type_id);
 -- BATCH
-    alter table batch add column if not exists old_id int;
-    update batch set old_id = id;
-    create index on batch (old_id);
-    alter table batch drop column if exists id;
     alter table batch add unique (inventory_id, branch_id, warehouse_id, batch_no, vendor_id);
 -- PRINT_TEMPLATE
     alter table print_template drop column if exists id;
@@ -1620,62 +2556,96 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
     alter table organization alter column created_by set not null;
     alter table organization alter column updated_by set not null;
 -- UDM_POS_SESSION
-    alter table udm_pos_session add column if not exists old_id int;
-    update udm_pos_session set old_id = id;
-    create index on udm_pos_session (old_id);
     alter table udm_pos_session drop column if exists id;
     alter table udm_pos_session rename column oid_id to id;
     alter table udm_pos_session alter column id set not null;
     alter table udm_pos_session add constraint udm_pos_session_pkey primary key (id);
         --
+        alter table voucher drop column if exists pos_counter_session_id;
 -- UDM_POS_COUNTER_SETTLEMENT
-    alter table udm_pos_counter_settlement add column if not exists old_id int;
-    update udm_pos_counter_settlement set old_id = id;
-    create index on udm_pos_counter_settlement (old_id);
     alter table udm_pos_counter_settlement drop column if exists id;
     alter table udm_pos_counter_settlement rename column oid_id to id;
     alter table udm_pos_counter_settlement alter column id set not null;
     alter table udm_pos_counter_settlement add constraint udm_pos_counter_settlement_pkey primary key (id);
         --
+        alter table voucher drop column if exists pos_counter_settlement_id;
+        --
         alter table udm_pos_session drop column if exists settlement_id;
         alter table udm_pos_session rename column settlement_oid to settlement_id;
 -- UDM_DOCTOR
-    alter table udm_doctor add column if not exists old_id int;
-    update udm_doctor set old_id = id;
-    create index on udm_doctor (old_id);
-    alter table udm_doctor drop column if exists id;
-    alter table udm_doctor rename column oid_id to id;
-    alter table udm_doctor alter column id set not null;
-    alter table udm_doctor add constraint udm_doctor_pkey primary key (id);
+    -- alter table udm_doctor drop column if exists id;
+    -- alter table udm_doctor rename column oid_id to id;
+    -- alter table udm_doctor alter column id set not null;
+    -- alter table udm_doctor add constraint udm_doctor_pkey primary key (id);
 -- UDM_DRUG_CLASSIFICATION
-    alter table udm_drug_classification add column if not exists old_id int;
-    update udm_drug_classification set old_id = id;
-    create index on udm_drug_classification (old_id);
-    alter table udm_drug_classification drop column if exists id;
-    alter table udm_drug_classification rename column oid_id to id;
-    alter table udm_drug_classification alter column id set not null;
-    alter table udm_drug_classification add constraint udm_drug_classification_pkey primary key (id);
+    -- alter table udm_drug_classification drop column if exists id;
+    -- alter table udm_drug_classification rename column oid_id to id;
+    -- alter table udm_drug_classification alter column id set not null;
+    -- alter table udm_drug_classification add constraint udm_drug_classification_pkey primary key (id);
         --
-        alter table udm_inventory_composition drop column if exists drug_classifications;
-        alter table udm_inventory_composition rename column drug_classifications_oid to drug_classifications;
+        -- alter table udm_inventory_composition drop column if exists drug_classifications;
+        -- alter table udm_inventory_composition rename column drug_classifications_oid to drug_classifications;
 -- UDM_INVENTORY_COMPOSITION
-    alter table udm_inventory_composition drop column if exists id;
-    alter table udm_inventory_composition rename column oid_id to id;
-    alter table udm_inventory_composition alter column id set not null;
-    alter table udm_inventory_composition add constraint udm_inventory_composition_pkey primary key (id);
+    -- alter table udm_inventory_composition drop column if exists id;
+    -- alter table udm_inventory_composition rename column oid_id to id;
+    -- alter table udm_inventory_composition alter column id set not null;
+    -- alter table udm_inventory_composition add constraint udm_inventory_composition_pkey primary key (id);
         --
-        alter table inventory drop column if exists udf_compositions;
-        alter table inventory rename column udf_compositions_oid to udf_compositions;
+        -- alter table inventory drop column if exists udf_compositions;
+        -- alter table inventory rename column udf_compositions_oid to udf_compositions;
 -- UDM_WANTED_ITEM
-    alter table udm_wanted_item drop column if exists id;
-    alter table udm_wanted_item rename column oid_id to id;
-    alter table udm_wanted_item alter column id set not null;
-    alter table udm_wanted_item add constraint udm_wanted_item_pkey primary key (id);
+    -- alter table udm_wanted_item drop column if exists id;
+    -- alter table udm_wanted_item rename column oid_id to id;
+    -- alter table udm_wanted_item alter column id set not null;
+    -- alter table udm_wanted_item add constraint udm_wanted_item_pkey primary key (id);
 
 select now() as time, 'RENAMING AND DROPPING UUID COLUMN END' as msg;
-
--- delete from unit_conversion where conversion = 1;
-
+-- -------------------------------------------------------------------------------------------------
+-- ---- INDEX RESTORE
+-- -------------------------------------------------------------------------------------------------
+-- select now() as time, 'ADDING REQUIRED INDEX START' as msg;
+-- --## ac_txn
+--     create index on ac_txn (voucher_id);
+--     create index on ac_txn (date);
+--     create index on ac_txn (account_id);
+--     create index on ac_txn (branch_id);
+-- --## account
+--     create index on account (val_name);
+--     create index on account (transaction_enabled);
+--     create index on account (mobile);
+-- --## bank_txn
+--     create index on bank_txn (date);
+--     drop index if exists bank_txn_ac_txn_id;
+--     create index on bank_txn (ac_txn_id);
+--     create index on bank_txn (account_id);
+--     create index on bank_txn (voucher_id);
+-- --## batch
+--     drop index if exists batch_barcode;
+--     create index on batch (barcode);
+--     create index on batch (inventory_id, branch_id, warehouse_id);
+-- --## bill_allocation
+--     create index on bill_allocation (eff_date);
+--     drop index if exists bill_allocation_ac_txn_id;
+--     create index on bill_allocation (ac_txn_id);
+--     create index on bill_allocation (account_id);
+--     create index on bill_allocation (voucher_id);
+--     create index on bill_allocation (branch_id, account_id, ref_no);
+-- --## inv_txn
+--     create index on inv_txn (voucher_id);
+--     create index on inv_txn (date);
+--     create index on inv_txn (inventory_id);
+--     create index on inv_txn (branch_id);
+--     create index on inv_txn (inventory_id, branch_id, warehouse_id, batch_no, vendor_id);
+-- --## inventory
+--     create index on inventory (val_name);
+-- --## voucher
+--     create index on voucher (date);
+--     create index on voucher (voucher_no);
+--     create index on voucher (branch_id);
+--     create index on voucher (base_voucher_type);
+-- select now() as time, 'ADDING REQUIRED INDEX END' as msg;
+--## last query
+delete from unit_conversion where conversion = 1;
 --## drop if any default exists
 DO $$
 DECLARE
@@ -1696,8 +2666,4 @@ BEGIN
     END LOOP;
 END $$;
 --##
-select now() as time, 'PART - I - MIGRATION END' as msg;
-
--- alter table udm_vendor_item_map add column if not exists unit_id text;
--- update udm_vendor_item_map set unit_id = inventory.unit_id from inventory where udm_vendor_item_map.inventory_id = inventory.id;
--- alter table udm_vendor_item_map alter column unit_id set not null;
+select now() as time, 'MIGRATION END' as msg;
