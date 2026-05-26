@@ -735,6 +735,11 @@ alter table bill_allocation
 alter table bill_allocation
     rename new_ref_no to ref_no;
 --##
+drop index if exists bill_allocation_pending;
+alter table bill_allocation
+    alter column pending type text
+        using pending::text;
+--##
 select now() as time, 'OID_CHANGES FOR BILL_ALLOCATION STARTS' as msg;
 -- bill_allocation field related changes
 alter table bill_allocation rename meta_data to metadata;

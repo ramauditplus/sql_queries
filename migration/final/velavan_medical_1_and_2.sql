@@ -1350,6 +1350,7 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
 -- ACCOUNT
     alter table account add column if not exists old_id int;
     update account set old_id = id;
+    create index on account (old_id);
     alter table account drop column if exists id;
     alter table account rename column oid_id to id;
     alter table account alter column id set not null;
@@ -1428,6 +1429,7 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
 -- BRANCH
     alter table branch add column if not exists old_id int;
     update branch set old_id = id;
+    create index on branch (old_id);
     alter table branch drop column if exists id;
     alter table branch rename column oid_id to id;
     alter table branch alter column id set not null;
@@ -1465,6 +1467,7 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
 -- DIVISION
     alter table division add column if not exists old_id int;
     update division set old_id = id;
+    create index on division (old_id);
     alter table division drop column if exists id;
     alter table division rename column oid_id to id;
     alter table division alter column id set not null;
@@ -1514,6 +1517,7 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
 -- SALES_PERSON
     alter table sales_person add column if not exists old_id int;
     update sales_person set old_id = id;
+    create index on sales_person (old_id);
     alter table sales_person drop column if exists id;
     alter table sales_person rename column oid_id to id;
     alter table sales_person alter column id set not null;
@@ -1557,6 +1561,7 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
 -- VOUCHER_TYPE
     alter table voucher_type add column if not exists old_id int;
     update voucher_type set old_id = id;
+    create index on voucher_type (old_id);
     alter table voucher_type drop column if exists id;
     alter table voucher_type rename column oid_id to id;
     alter table voucher_type alter column id set not null;
@@ -1570,6 +1575,7 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
 -- WAREHOUSE
     alter table warehouse add column if not exists old_id int;
     update warehouse set old_id = id;
+    create index on warehouse (old_id);
     alter table warehouse drop column if exists id;
     alter table warehouse rename column oid_id to id;
     alter table warehouse alter column id set not null;
@@ -1598,6 +1604,7 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
 -- BATCH
     alter table batch add column if not exists old_id int;
     update batch set old_id = id;
+    create index on batch (old_id);
     alter table batch drop column if exists id;
     alter table batch add unique (inventory_id, branch_id, warehouse_id, batch_no, vendor_id);
 -- PRINT_TEMPLATE
@@ -1615,6 +1622,7 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
 -- UDM_POS_SESSION
     alter table udm_pos_session add column if not exists old_id int;
     update udm_pos_session set old_id = id;
+    create index on udm_pos_session (old_id);
     alter table udm_pos_session drop column if exists id;
     alter table udm_pos_session rename column oid_id to id;
     alter table udm_pos_session alter column id set not null;
@@ -1623,6 +1631,7 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
 -- UDM_POS_COUNTER_SETTLEMENT
     alter table udm_pos_counter_settlement add column if not exists old_id int;
     update udm_pos_counter_settlement set old_id = id;
+    create index on udm_pos_counter_settlement (old_id);
     alter table udm_pos_counter_settlement drop column if exists id;
     alter table udm_pos_counter_settlement rename column oid_id to id;
     alter table udm_pos_counter_settlement alter column id set not null;
@@ -1633,6 +1642,7 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
 -- UDM_DOCTOR
     alter table udm_doctor add column if not exists old_id int;
     update udm_doctor set old_id = id;
+    create index on udm_doctor (old_id);
     alter table udm_doctor drop column if exists id;
     alter table udm_doctor rename column oid_id to id;
     alter table udm_doctor alter column id set not null;
@@ -1640,6 +1650,7 @@ select now() as time, 'RENAMING AND DROPPING UUID COLUMN START' as msg;
 -- UDM_DRUG_CLASSIFICATION
     alter table udm_drug_classification add column if not exists old_id int;
     update udm_drug_classification set old_id = id;
+    create index on udm_drug_classification (old_id);
     alter table udm_drug_classification drop column if exists id;
     alter table udm_drug_classification rename column oid_id to id;
     alter table udm_drug_classification alter column id set not null;
@@ -2435,6 +2446,11 @@ alter table bill_allocation
 --##
 alter table bill_allocation
     rename new_ref_no to ref_no;
+--##
+drop index if exists bill_allocation_pending;
+alter table bill_allocation
+    alter column pending type text
+        using pending::text;
 --##
 select now() as time, 'OID_CHANGES FOR BILL_ALLOCATION STARTS' as msg;
 -- bill_allocation field related changes
