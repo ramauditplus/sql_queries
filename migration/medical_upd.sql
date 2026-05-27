@@ -1490,7 +1490,7 @@ SET metadata = jsonb_set(
         'true'::jsonb,
         true
                )
-WHERE account_id IN ('12', '13', '14')
+WHERE account_id IN (12, 13, 14)
   AND base_voucher_type IN (
                             'SALE',
                             'PURCHASE',
