@@ -760,7 +760,7 @@ update inventory_branch_detail x
 set s_disc_percentage = y.value
 from price_list_condition y
 where x.inventory_id = y.inventory_id
-  and (x.branch_id = any (y.branches) or y.branches is null or array_length(y.branches, 1) = 0);
+  and (x.branch_id = any (y.branches) or y.branches is null or cardinality(y.branches) = 0);
 --##
 alter table inventory_branch_detail alter column reorder_mode drop not null;
 --##

@@ -85,10 +85,10 @@ WHERE a.id = g.voucher_id
 --##
 UPDATE voucher v
 SET branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
-    branch_gst_location_id = b.branch_gst ->> 'location_id',
+    branch_gst_location_id = coalesce( b.branch_gst ->> 'location_id', '33'),
     branch_gst_no          = b.branch_gst ->> 'gst_no',
     party_gst_reg_type     = b.party_gst ->> 'reg_type',
-    party_gst_location_id  = b.party_gst ->> 'location_id',
+    party_gst_location_id  = coalesce( b.party_gst ->> 'location_id', '33'),
     party_gst_no           = b.party_gst ->> 'gst_no',
     warehouse_id           = w.id,
     warehouse_name         = b.warehouse_name,
@@ -108,11 +108,11 @@ FROM debit_note b
 WHERE v.id = b.voucher_id;
 --##
 UPDATE voucher v
-SET branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
-    branch_gst_location_id = b.branch_gst ->> 'location_id',
+SET branch_gst_reg_type    = coalesce( b.branch_gst ->> 'reg_type', 'REGULAR'),
+    branch_gst_location_id = coalesce( b.branch_gst ->> 'location_id', '33'),
     branch_gst_no          = b.branch_gst ->> 'gst_no',
-    party_gst_reg_type     = b.party_gst ->> 'reg_type',
-    party_gst_location_id  = b.party_gst ->> 'location_id',
+    party_gst_reg_type     = coalesce( b.party_gst ->> 'reg_type', 'UNREGISTERED'),
+    party_gst_location_id  = coalesce( b.party_gst ->> 'location_id', '33'),
     party_gst_no           = b.party_gst ->> 'gst_no',
     warehouse_id           = w.id,
     warehouse_name         = b.warehouse_name,
@@ -180,10 +180,10 @@ WHERE v.id = b.voucher_id;
 --##
 UPDATE voucher v
 SET branch_gst_reg_type      = b.branch_gst ->> 'reg_type',
-    branch_gst_location_id   = b.branch_gst ->> 'location_id',
+    branch_gst_location_id   = coalesce( b.branch_gst ->> 'location_id', '33'),
     branch_gst_no            = b.branch_gst ->> 'gst_no',
     party_gst_reg_type       = b.party_gst ->> 'reg_type',
-    party_gst_location_id    = b.party_gst ->> 'location_id',
+    party_gst_location_id    = coalesce( b.party_gst ->> 'location_id', '33'),
     party_gst_no             = b.party_gst ->> 'gst_no',
     warehouse_id             = w.id,
     warehouse_name           = b.warehouse_name,
@@ -210,11 +210,11 @@ FROM purchase_bill b
 WHERE v.id = b.voucher_id;
 --##
 UPDATE voucher v
-SET branch_gst_reg_type    = b.branch_gst ->> 'reg_type',
-    branch_gst_location_id = b.branch_gst ->> 'location_id',
+SET branch_gst_reg_type    = coalesce( b.branch_gst ->> 'reg_type', 'REGULAR'),
+    branch_gst_location_id = coalesce( b.branch_gst ->> 'location_id', '33'),
     branch_gst_no          = b.branch_gst ->> 'gst_no',
-    party_gst_reg_type     = b.party_gst ->> 'reg_type',
-    party_gst_location_id  = b.party_gst ->> 'location_id',
+    party_gst_reg_type     = coalesce( b.party_gst ->> 'reg_type', 'UNREGISTERED'),
+    party_gst_location_id  = coalesce( b.party_gst ->> 'location_id', '33'),
     party_gst_no           = b.party_gst ->> 'gst_no',
     warehouse_id           = w.id,
     warehouse_name         = b.warehouse_name,
