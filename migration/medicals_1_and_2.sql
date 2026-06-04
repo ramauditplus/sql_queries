@@ -2543,6 +2543,7 @@ select now() as time, 'DROPPING UNWANTED COLUMN & TABLE START' as msg;
 --DROP OR MODIFY TABLE--
     drop table if exists credit_note;
     drop table if exists debit_note;
+    drop table if exists credit_note_inv_item;
     drop table if exists debit_note_inv_item;
     drop table if exists purchase_bill;
     drop table if exists purchase_bill_inv_item;
